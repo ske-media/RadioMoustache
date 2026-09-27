@@ -27,9 +27,11 @@ struct SetupValidatorTests {
 
     @Test func missingMicrophoneAndOutputAreBlocking() {
         let found = issues(input: nil, main: nil)
+        // Calculé hors de #expect : la macro ne sait pas décomposer un appel « rethrows » comme allSatisfy.
+        let allBlocking = found.allSatisfy(\.isBlocking)
         #expect(found.contains(.missingDevice(.microphone)))
         #expect(found.contains(.missingDevice(.mainOutput)))
-        #expect(found.allSatisfy(\.isBlocking))
+        #expect(allBlocking)
     }
 
     @Test func monitorCannotBeTheMainOutput() {
@@ -49,8 +51,9 @@ struct SetupValidatorTests {
 
     @Test func bluetoothAndAirPlayOutputsOnlyWarn() {
         let speaker = issues(main: Fixtures.bluetoothSpeaker)
+        let noneBlocking = speaker.allSatisfy { !$0.isBlocking }
         #expect(speaker == [.highLatencyOutput(.mainOutput, .bluetooth)])
-        #expect(speaker.allSatisfy { !$0.isBlocking })
+        #expect(noneBlocking)
         #expect(issues(monitor: Fixtures.airPods) == [.highLatencyOutput(.monitorOutput, .bluetooth)])
         #expect(issues(main: Fixtures.airPlaySpeaker) == [.highLatencyOutput(.mainOutput, .airPlay)])
     }
