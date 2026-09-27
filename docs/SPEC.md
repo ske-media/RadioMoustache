@@ -61,6 +61,9 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 - Chaîne voix : coupe-bas ~80 Hz → **noise gate** → **compresseur « voix radio »** → effets → mix → **limiteur de
   sécurité** (master). **Détection anti-Larsen** : baisse automatique du micro + alerte.
 - Point ouvert (étape 3) : repli si l'agrégé est impossible (fréquences incompatibles, ex. micro Bluetooth à 16 kHz).
+- Constaté sur le matériel réel (test de l'étape 1) : l'enceinte Bluetooth tourne à **44,1 kHz** alors que le micro USB
+  et les AirPods sont à **48 kHz** → conversion de fréquence indispensable à l'étape 3. Les AirPods apparaissent comme
+  **deux périphériques distincts** (micro à 24 kHz, sortie à 48 kHz).
 
 ## 6. Console micro et effets
 
@@ -101,14 +104,31 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 
 ## 9. Direction artistique — « full full vintage »
 
-- Référence : **studio radio 1950-60**, **skeuomorphisme total** (bakélite, bois, métal, verre, vis apparentes,
-  reflets, aiguilles avec inertie physique). Matières **dessinées en code** (aucune image).
+Précisée le 27/09/2026 à partir de trois photos de référence fournies par l'utilisateur (studio radio des années 60
+au pupitre bleu-vert ; studio des années 70 tamisé à la lampe ; ordinateur des années 80 à écran vert).
+
+- Mélange retenu : le **matériel radio des années 60** (pupitre émaillé, gros boutons, platine, magnéto, boîtier
+  ON AIR, murs en panneaux perforés) dans la **pénombre chaude des années 70** (lampe à abat-jour, grain de
+  pellicule), avec des **petits écrans cathodiques verts** pour les textes (titre en cours, menus).
+- **Studio de nuit** : pénombre, lumière de lampe chaude, lueurs orange et vertes. Dark mode conservé.
+- **Appareils vus de face** posés sur un bureau en bois, mur perforé en haut avec l'horloge et le boîtier ON AIR :
+  tout reste cliquable et lisible en direct.
+- **Pupitre en émail bleu-vert martelé** (vert d'eau patiné), qui contraste avec les lueurs orange.
+- Rendu : **images photoréalistes générées par IA** (Higgsfield, fonds transparents) pour les façades, boutons,
+  VU-mètres, bobines et platine, **animées en code** (aiguilles, bobines, voyants), comme les plugins audio vintage.
+  En attendant (Higgsfield limité le 27/09), la maquette utilise des matières en CSS et SVG.
+- Validation du style sur une **maquette interactive** avant de coder :
+  https://claude.ai/artifact/WB7sB9tKfAJHHjLmNmnMz1
+- Référence de départ : **studio radio 1950-60**, **skeuomorphisme total** (bakélite, bois, métal, verre, vis
+  apparentes, reflets, aiguilles avec inertie physique).
 - Palette = **lueurs d'époque**, dark mode exclusif :
   - fond : bakélite / bois sombre ;
   - **orange électrique `#ff6b00`** : lueur des tubes, chiffres Nixie ;
   - **vert néon `#3efb0a`** : œil magique, voyants ;
   - **bordeaux profond `#6a0e15`** : enseigne ON AIR, alertes, cuir.
-- Typographie : **plaques gravées** (Futura / Copperplate, fournies avec macOS) + **étiquettes Dymo** pour les jingles.
+- Typographie : **lettres gravées** sur les façades (Jost, proche de Futura), **étiquettes Dymo** pour les jingles,
+  **texte pixel vert phosphore** sur les écrans (VT323), logo en script années 60 (Yellowtail). Polices libres (OFL),
+  à embarquer dans l'app.
 - Composants :
   - ON AIR = **enseigne lumineuse** (bouton géant, halo, léger scintillement) ;
   - niveaux = **VU-mètres à aiguille** (master, balistique VU 300 ms) + **œil magique** (micro) ;
@@ -127,7 +147,9 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 
 1. **Architecture + AudioManager** : couche Core Audio, liste et sélection des périphériques, mémorisation,
    écran de diagnostic provisoire, CI. ✅
-2. **Modale de démarrage vintage** liée à `AudioManager` (plaque gravée, œil magique, son test).
+2. **Modale de démarrage vintage** liée à `AudioManager` : un **moniteur cathodique qui s'allume** (balayage,
+   séquence de démarrage) et affiche en vert le choix du micro, du canal, de l'enceinte, du casque et de la latence ;
+   à côté, un levier « secteur », l'œil magique (niveau micro réel) et les boutons « son test ».
 3. **Moteur temps réel** : agrégé privé + AVAudioEngine, monitoring, première distorsion.
 4. **Spotify** : AppleScript + Process Tap, ducking.
 5. **Soundboard** : cartouches, import, enregistrement, persistance.
