@@ -1,0 +1,16 @@
+# Projet généré par XcodeGen (voir project.yml)
+*.xcodeproj/
+*.xcworkspace/
+
+# Réglages personnels de signature
+Config/Local.xcconfig
+
+# Build et résultats Xcode
+build/
+DerivedData/
+*.xcresult
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store

@@ -1,0 +1,72 @@
+# Radio Moustache — description du projet Xcode (XcodeGen).
+# Ne modifie jamais le .xcodeproj : il est généré à partir de ce fichier (./scripts/generate-project.sh).
+
+name: RadioMoustache
+
+options:
+  bundleIdPrefix: com.skemedia
+  deploymentTarget:
+    macOS: "14.2"
+  developmentLanguage: fr
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+configFiles:
+  Debug: Config/Shared.xcconfig
+  Release: Config/Shared.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.2"
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  RadioMoustache:
+    type: application
+    platform: macOS
+    sources:
+      - path: RadioMoustache
+        excludes:
+          - "Supporting/**"
+      - path: RadioMoustache/Supporting
+        buildPhase: none
+    settings:
+      base:
+        PRODUCT_NAME: RadioMoustache
+        PRODUCT_BUNDLE_IDENTIFIER: com.skemedia.RadioMoustache
+        INFOPLIST_FILE: RadioMoustache/Supporting/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: RadioMoustache/Supporting/RadioMoustache.entitlements
+        # La signature se règle dans Config/Shared.xcconfig (et Config/Local.xcconfig, non versionné).
+        CODE_SIGN_STYLE: $(RM_CODE_SIGN_STYLE)
+        CODE_SIGN_IDENTITY: $(RM_CODE_SIGN_IDENTITY)
+        DEVELOPMENT_TEAM: $(RM_DEVELOPMENT_TEAM)
+        # Pas d'App Sandbox ni de Hardened Runtime : usage perso (AppleScript vers Spotify, Core Audio).
+        ENABLE_HARDENED_RUNTIME: NO
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+    scheme:
+      testTargets:
+        - RadioMoustacheTests
+      gatherCoverageData: true
+
+  RadioMoustacheTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: RadioMoustacheTests
+    dependencies:
+      - target: RadioMoustache
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.skemedia.RadioMoustacheTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/RadioMoustache.app/Contents/MacOS/RadioMoustache
+        BUNDLE_LOADER: $(TEST_HOST)
+        CODE_SIGN_STYLE: $(RM_CODE_SIGN_STYLE)
+        CODE_SIGN_IDENTITY: $(RM_CODE_SIGN_IDENTITY)
+        DEVELOPMENT_TEAM: $(RM_DEVELOPMENT_TEAM)

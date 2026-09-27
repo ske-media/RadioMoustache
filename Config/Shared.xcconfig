@@ -1,0 +1,13 @@
+// Radio Moustache — réglages de build communs à toutes les cibles.
+
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+// Signature par défaut : « Sign to Run Locally », aucun compte Apple requis.
+// Pour signer avec ton Apple ID (macOS garde alors l'autorisation micro d'un build à l'autre),
+// copie Local.xcconfig.example en Local.xcconfig et renseigne ton Team ID.
+RM_CODE_SIGN_STYLE = Manual
+RM_CODE_SIGN_IDENTITY = -
+RM_DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

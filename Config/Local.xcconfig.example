@@ -1,0 +1,8 @@
+// Copie ce fichier en Config/Local.xcconfig (ignoré par git) pour signer avec ton compte Apple.
+// Avantage : macOS conserve l'autorisation d'accès au micro entre deux builds.
+// Ton Team ID est visible dans Xcode > Settings > Accounts (un Apple ID gratuit suffit).
+// Relance ensuite ./scripts/generate-project.sh.
+
+RM_CODE_SIGN_STYLE = Automatic
+RM_CODE_SIGN_IDENTITY = Apple Development
+RM_DEVELOPMENT_TEAM = ABCDE12345

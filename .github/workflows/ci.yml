@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build et tests (macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versions des outils
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Installation de XcodeGen
+        run: brew install xcodegen
+
+      - name: Génération du projet
+        run: xcodegen generate
+
+      - name: Build et tests
+        run: |
+          set -o pipefail
+          if command -v xcbeautify >/dev/null 2>&1; then
+            FORMATTER="xcbeautify --renderer github-actions"
+          else
+            FORMATTER="cat"
+          fi
+          xcodebuild test \
+            -project RadioMoustache.xcodeproj \
+            -scheme RadioMoustache \
+            -destination 'platform=macOS' \
+            -resultBundlePath TestResults.xcresult \
+            2>&1 | tee xcodebuild.log | $FORMATTER
+
+      - name: Journaux en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: |
+            xcodebuild.log
+            TestResults.xcresult
+          if-no-files-found: ignore
