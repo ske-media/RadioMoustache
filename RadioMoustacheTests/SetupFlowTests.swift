@@ -261,8 +261,13 @@ struct SetupFlowTests {
         try await harness.powerOnAndWait()
 
         harness.meter.status = .denied
-
         #expect(harness.flow.warningLines.last == harness.flow.meterWarning)
         #expect(harness.flow.meterWarning != nil)
+
+        harness.meter.status = .muted
+        #expect(harness.flow.meterWarning == "! MICRO MUET : VÉRIFIE L'AUTORISATION MICRO")
+
+        harness.meter.status = .noSignal
+        #expect(harness.flow.meterWarning == "! ŒIL MAGIQUE : RIEN NE VIENT DU MICRO")
     }
 }

@@ -88,7 +88,7 @@ final class RecordingLevelMonitor: InputLevelMonitoring {
     private(set) var startedChannels: [InputChannelSelection] = []
     private(set) var stopCount = 0
 
-    func start(deviceUID: String, channels: InputChannelSelection) {
+    func start(deviceUID: String, deviceName: String, channels: InputChannelSelection) {
         startedUIDs.append(deviceUID)
         startedChannels.append(channels)
         status = .running

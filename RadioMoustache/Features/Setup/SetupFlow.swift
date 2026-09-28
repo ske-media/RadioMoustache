@@ -50,6 +50,7 @@ final class SetupFlow {
 
     private struct MeterTarget: Equatable {
         let uid: String
+        let name: String
         let channels: InputChannelSelection
     }
 
@@ -119,6 +120,8 @@ final class SetupFlow {
         switch meter.status {
         case .denied: return String(localized: "! MICRO REFUSÉ : AUTORISE-LE DANS RÉGLAGES SYSTÈME")
         case .unavailable: return String(localized: "! ŒIL MAGIQUE : MICRO INJOIGNABLE")
+        case .noSignal: return String(localized: "! ŒIL MAGIQUE : RIEN NE VIENT DU MICRO")
+        case .muted: return String(localized: "! MICRO MUET : VÉRIFIE L'AUTORISATION MICRO")
         case .stopped, .starting, .running: return nil
         }
     }
@@ -378,12 +381,12 @@ final class SetupFlow {
     private func syncMeter() {
         var wanted: MeterTarget?
         if isOn, confirmedSession == nil, let microphone = audio.selectedDevice(for: .microphone) {
-            wanted = MeterTarget(uid: microphone.uid, channels: audio.selection.inputChannels)
+            wanted = MeterTarget(uid: microphone.uid, name: microphone.name, channels: audio.selection.inputChannels)
         }
         guard wanted != meterTarget else { return }
         meterTarget = wanted
         if let wanted {
-            meter.start(deviceUID: wanted.uid, channels: wanted.channels)
+            meter.start(deviceUID: wanted.uid, deviceName: wanted.name, channels: wanted.channels)
         } else {
             meter.stop()
         }
