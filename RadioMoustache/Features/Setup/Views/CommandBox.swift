@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Boîtier « Commandes » : levier « SECTEUR », œil magique et boutons d'essai.
+/// Boîtier « Commandes » : levier « SECTEUR » et œil magique. Les essais se font dans les étapes du moniteur.
 struct CommandBox: View {
     let flow: SetupFlow
 
-    static let size = CGSize(width: 256, height: 524)
+    static let size = CGSize(width: 256, height: 440)
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -43,15 +43,6 @@ struct CommandBox: View {
                 Text("Niveau micro").markerStyle(13)
             }
             .placed(x: 70, y: 390)
-
-            TestButton(title: "Essai enceinte", capColors: [Color(hex: 0xC9412E), Palette.deepBordeaux], isLit: flow.testingTarget == .mainOutput, tapeAngle: -1.5) {
-                flow.test(.mainOutput)
-            }
-            .placed(x: 22, y: 430)
-            TestButton(title: "Essai casque", capColors: [Color(hex: 0x3C3C3A), Color(hex: 0x0C0C0B)], isLit: flow.testingTarget == .monitorOutput, tapeAngle: 1) {
-                flow.test(.monitorOutput)
-            }
-            .placed(x: 22, y: 474)
         }
         .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
     }
@@ -297,49 +288,5 @@ struct EyeShadowShape: Shape {
         )
         path.closeSubpath()
         return path
-    }
-}
-
-/// Bouton d'essai chromé, son voyant et son étiquette.
-struct TestButton: View {
-    let title: LocalizedStringKey
-    let capColors: [Color]
-    let isLit: Bool
-    let tapeAngle: Double
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ZStack(alignment: .topLeading) {
-                Circle()
-                    .fill(RadialGradient(
-                        stops: [
-                            .init(color: Color(hex: 0xF4F4F0), location: 0),
-                            .init(color: Color(hex: 0xA5AAA7), location: 0.45),
-                            .init(color: Color(hex: 0x4B504E), location: 0.8),
-                        ],
-                        center: UnitPoint(x: 0.38, y: 0.32),
-                        startRadius: 0,
-                        endRadius: 26
-                    ))
-                    .overlay {
-                        Circle()
-                            .fill(RadialGradient(colors: capColors, center: UnitPoint(x: 0.4, y: 0.35), startRadius: 0, endRadius: 14))
-                            .frame(width: 24, height: 24)
-                    }
-                    .frame(width: 38, height: 38)
-                    .shadow(color: .black.opacity(0.6), radius: 4, y: 4)
-                IndicatorLamp(glow: isLit ? .orange : .off, size: 16)
-                    .animation(.easeOut(duration: 0.2), value: isLit)
-                    .placed(x: 186, y: 11)
-                MaskingTape(width: 128, height: 26, angle: tapeAngle) {
-                    Text(title).markerStyle(13)
-                }
-                .placed(x: 48, y: 6)
-            }
-            .frame(width: 212, height: 38, alignment: .topLeading)
-        }
-        .buttonStyle(PressableButtonStyle())
-        .accessibilityLabel(Text(title))
     }
 }

@@ -35,24 +35,38 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 ## 4. Écran de démarrage : « Préparation de l'émission » (Session Setup)
 
 - Écran affiché **à chaque lancement**, **pré-rempli** avec la dernière session si ses périphériques sont
-  branchés (sinon : périphériques par défaut du Mac) → validation en un clic.
-- **Allumage à chaque lancement** (choix du 28/09/2026) : on abaisse le levier « SECTEUR » (clic, Espace ou Entrée),
-  étincelles, puis **séquence de démarrage d'environ 3 s** qu'un clic ou Entrée fait passer ; le menu apparaît ensuite.
-- **Choix d'un appareil** : un clic sur une ligne du moniteur ouvre **la liste des appareils en vert, dans l'écran** ;
-  au clavier : ↑↓ pour la ligne ou l'appareil, Entrée pour ouvrir la liste et valider, Échap pour la fermer.
-- Champs : **Micro** (+ **canal d'entrée** : entrée 1, 2… ou paire stéréo), **Sortie principale**,
-  **Casque de retour** (facultatif, forcément différent de la sortie principale), **Latence** (buffer 64 / 128 / 256 / 512).
-- Outils : **œil magique** (niveau réel du micro et du canal choisis, dès que le secteur est allumé), bouton
-  **« son test »** par sortie : **la voix du Mac annonce « Essai enceinte, un, deux »** (ou « casque ») **puis un bip**
-  de 1 kHz, pour savoir tout de suite quelle sortie parle.
+  branchés (sinon : périphériques par défaut du Mac).
+- **Allumage automatique** (choix du 28/09/2026, remplace l'allumage au levier) : au lancement, le moniteur s'allume tout
+  seul dès que le matériel est connu, avec une **séquence de démarrage courte (moins de 2 s)** qu'un clic ou Entrée fait
+  passer. Le levier « SECTEUR » sert seulement à éteindre et à rallumer ; rallumé, le moniteur reprend où il en était.
+- **Préparation guidée, une question à la fois** (demande du 28/09/2026 : le premier écran, un menu de cinq réglages
+  avec les essais sur le côté, était jugé peu intuitif). Onglets **1 MICRO · 2 ENCEINTE · 3 CASQUE · 4 GO** : étape
+  affichée en vidéo inverse, étapes pas encore atteintes éteintes, « ! » sur une étape à régler.
+  1. **Micro** : « Dans quel micro parles-tu ? », liste des micros, **barre de niveau** sous la liste
+     (« NIVEAU [#####.....] PARLE ! »).
+  2. **Enceinte** : « Où écoute le public ? », liste des sorties, bouton **[ ESSAI : « UN, DEUX » ]**.
+  3. **Casque** : « Et dans tes oreilles ? », « Aucun (pas de retour) » puis les sorties, bouton d'essai.
+  4. **Go** : récapitulatif (un clic sur une ligne ramène à son étape), alertes, gros bouton **[ PARÉ À ÉMETTRE ! ]**.
+- Les listes sont des **boutons radio** : un clic ou les flèches ↑↓ prennent l'appareil **tout de suite** (la barre de
+  niveau et l'œil magique suivent le micro choisi). **[ SUIVANT > ]** (Entrée ou →) ne passe à l'étape suivante que si
+  l'étape est réglée, sinon le moniteur dit pourquoi ; **[ < RETOUR ]** (Échap ou ←) revient en arrière ; Espace lance
+  l'essai aux étapes Enceinte et Casque. Seules les étapes déjà atteintes s'ouvrent depuis les onglets.
+- **Récap direct** : si le matériel de la dernière émission est branché et sans problème, le moniteur s'ouvre sur
+  l'étape 4, « Même matériel que la dernière fois ? » → validation en un clic. Au retour de la cabine : étape 4 aussi.
+- **Réglages avancés**, cachés par défaut (l'app choisit) : **canal d'entrée** (entrée 1, 2… ou paire stéréo) à l'étape
+  Micro, seulement si le micro a plusieurs entrées ; **latence** (buffer 64 / 128 / 256 / 512) à l'étape Go.
+- Champs : **Micro** (+ canal), **Sortie principale**, **Casque de retour** (facultatif, forcément différent de la
+  sortie principale), **Latence**.
+- Outils : **œil magique** sur le boîtier « Commandes » (niveau réel du micro et du canal choisis, tant que le moniteur
+  est allumé) ; **son d'essai** par sortie, dans son étape : **la voix du Mac annonce « Essai enceinte, un, deux »** (ou
+  « casque ») **puis un bip** de 1 kHz, pour savoir tout de suite quelle sortie parle.
 - **Journal de bord** : la dernière émission validée (date et appareils) est mémorisée et affichée sur le bureau.
 - Avertissements (non bloquants) :
   - sortie Bluetooth : 150 à 300 ms de décalage ; AirPlay : ~2 s ;
   - micro Bluetooth : macOS bascule le périphérique en qualité « téléphone » (16 kHz), entrée et sortie ;
   - micro intégré : capte toute la pièce, risque de Larsen.
-- Style (détail au §9) : les réglages s'affichent en vert sur le **moniteur cathodique « Contrôle émetteur »** ; à
-  côté, le boîtier « Commandes » porte le **levier « SECTEUR »**, l'œil magique et les boutons « Essai enceinte » /
-  « Essai casque ». On valide avec **[ PARÉ À ÉMETTRE ]**.
+- Style (détail au §9) : les étapes s'affichent en vert sur le **moniteur cathodique « Contrôle émetteur »** ; à
+  côté, le boîtier « Commandes » porte le **levier « SECTEUR »** et l'œil magique.
 - Mémorisation : `UserDefaults` (UID des périphériques, jamais les `AudioDeviceID` qui changent à chaque reconnexion).
 - Déconnexion pendant la session : **bandeau d'alerte bordeaux + reconnexion automatique** dès que le périphérique
   réapparaît (silence entre-temps).
@@ -154,11 +168,11 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
     fume, cendrier et cigarette ;
   - **moniteur « Contrôle émetteur »** (boîtier kaki, écran cathodique vert) avec le scotch « PAS TOUCHE ! — le
     capitaine » ;
-  - **boîtier « Commandes »** : **interrupteur à couteau « SECTEUR »** (étincelles), **œil magique** (niveau du micro),
-    boutons **« Essai enceinte »** et **« Essai casque »** ;
-  - abaisser le levier lance la **séquence de démarrage** du moniteur (« chauffage des lampes… antenne hissée…
-    position : eaux internationales… 102,4 MHz… matériel audio trouvé »), puis le **menu vert** : micro, canal,
-    enceinte, casque, latence, avertissements, **[ PARÉ À ÉMETTRE ]**.
+  - **boîtier « Commandes »** : **interrupteur à couteau « SECTEUR »** (étincelles) et **œil magique** (niveau du micro) ;
+  - au lancement, le moniteur s'allume tout seul : **séquence de démarrage** (« chauffage des lampes… antenne hissée…
+    position : eaux internationales… 102,4 MHz… matériel audio trouvé »), puis les **étapes guidées** en vert (§4) :
+    onglets, question en grand, liste à boutons radio, niveau du micro ou essai de la sortie, messages,
+    **[ < RETOUR ]** / **[ SUIVANT > ]**, et **[ PARÉ À ÉMETTRE ! ]** à l'étape 4.
 - **Écran 2, « Cabine radio »** (le studio) :
   - au mur : **horloge de bord** en laiton, **boîtier ON AIR** en tôle froissée (vitre rouge au pochoir, **ampoule rouge
     grillagée**), **hublot** en laiton (mer au clair de lune, phare qui balaie l'horizon) ;
@@ -208,9 +222,10 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
 
 1. **Architecture + AudioManager** : couche Core Audio, liste et sélection des périphériques, mémorisation,
    écran de diagnostic provisoire, CI. ✅
-2. **Écran « Préparation de l'émission »** lié à `AudioManager` (§4 et §9) : levier « SECTEUR », séquence de
-   démarrage du moniteur cathodique, menu vert (micro, canal, enceinte, casque, latence), œil magique sur le niveau
-   réel du micro, sons d'essai sur l'enceinte et sur le casque, puis « Paré à émettre ».
+2. **Écran « Préparation de l'émission »** lié à `AudioManager` (§4 et §9) : moniteur cathodique qui s'allume tout
+   seul, préparation guidée en 4 étapes (micro et son niveau, enceinte et casque avec leur essai, récapitulatif),
+   réglages avancés (canal, latence), œil magique sur le niveau réel du micro, puis « Paré à émettre ». ✅ (validé le
+   28/09/2026, puis refait en étapes guidées le même jour, à revalider)
 3. **Moteur temps réel** : agrégé privé + AVAudioEngine, monitoring, première distorsion.
 4. **Musique : le conducteur** (§7) : conducteurs nommés, titres Spotify (API Web + app Spotify du Mac) et fichiers,
    enchaînement automatique et fondus, à suivre, heures de passage, stop après, recherche, capture de Spotify

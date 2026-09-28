@@ -12,40 +12,94 @@ extension String {
     }
 }
 
-/// Lignes du menu du moniteur, puis le bouton « Paré à émettre ».
-enum SetupRow: Int, CaseIterable, Identifiable, Sendable {
+/// Étapes guidées de la préparation : une question par écran, dans l'ordre, puis le récapitulatif.
+enum SetupStep: Int, CaseIterable, Identifiable, Comparable, Sendable {
+    case microphone = 1
+    case mainOutput
+    case monitorOutput
+    case review
+
+    var id: Int { rawValue }
+
+    init(role: DeviceRole) {
+        switch role {
+        case .microphone: self = .microphone
+        case .mainOutput: self = .mainOutput
+        case .monitorOutput: self = .monitorOutput
+        }
+    }
+
+    /// Nom de l'onglet, après son numéro.
+    var tabLabel: String {
+        switch self {
+        case .microphone: String(localized: "MICRO")
+        case .mainOutput: String(localized: "ENCEINTE")
+        case .monitorOutput: String(localized: "CASQUE")
+        case .review: String(localized: "GO")
+        }
+    }
+
+    /// Question posée en grand en tête de l'écran.
+    var question: String {
+        list?.question ?? String(localized: "TOUT EST PRÊT ?")
+    }
+
+    /// Appareils proposés à l'étape (le récapitulatif n'en a pas).
+    var list: SetupList? {
+        switch self {
+        case .microphone: .microphone
+        case .mainOutput: .mainOutput
+        case .monitorOutput: .monitorOutput
+        case .review: nil
+        }
+    }
+
+    /// Sortie qu'on peut essayer depuis l'étape.
+    var testTarget: TestTarget? {
+        switch self {
+        case .mainOutput: .mainOutput
+        case .monitorOutput: .monitorOutput
+        case .microphone, .review: nil
+        }
+    }
+
+    var previous: SetupStep? {
+        SetupStep(rawValue: rawValue - 1)
+    }
+
+    var next: SetupStep? {
+        SetupStep(rawValue: rawValue + 1)
+    }
+
+    static func < (lhs: SetupStep, rhs: SetupStep) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
+/// Liste de choix affichée dans le moniteur : les appareils d'une étape, ou un réglage avancé.
+enum SetupList: Hashable, Sendable {
     case microphone
     case channel
     case mainOutput
     case monitorOutput
     case latency
-    case goLive
 
-    var id: Int { rawValue }
-
-    /// Les lignes qui ouvrent une liste de choix.
-    static let menuRows: [SetupRow] = [.microphone, .channel, .mainOutput, .monitorOutput, .latency]
-
-    var label: String {
+    var question: String {
         switch self {
-        case .microphone: String(localized: "MICRO")
-        case .channel: String(localized: "CANAL")
-        case .mainOutput: String(localized: "ENCEINTE")
-        case .monitorOutput: String(localized: "CASQUE")
-        case .latency: String(localized: "LATENCE")
-        case .goLive: String(localized: "PARÉ À ÉMETTRE")
+        case .microphone: String(localized: "DANS QUEL MICRO PARLES-TU ?")
+        case .channel: String(localized: "SUR QUELLE ENTRÉE EST LE MICRO ?")
+        case .mainOutput: String(localized: "OÙ ÉCOUTE LE PUBLIC ?")
+        case .monitorOutput: String(localized: "ET DANS TES OREILLES ?")
+        case .latency: String(localized: "QUELLE LATENCE ?")
         }
     }
 
-    /// Titre de la liste de choix de la ligne.
-    var listTitle: String {
+    /// Ligne affichée quand la liste est vide (aucun appareil de ce genre branché).
+    var emptyText: String {
         switch self {
-        case .microphone: String(localized: "CHOISIS LE MICRO")
-        case .channel: String(localized: "CHOISIS LE CANAL D'ENTRÉE")
-        case .mainOutput: String(localized: "CHOISIS L'ENCEINTE")
-        case .monitorOutput: String(localized: "CHOISIS LE CASQUE DE RETOUR")
-        case .latency: String(localized: "CHOISIS LA LATENCE")
-        case .goLive: ""
+        case .microphone: String(localized: "AUCUN MICRO TROUVÉ : BRANCHES-EN UN")
+        case .mainOutput: String(localized: "AUCUNE SORTIE TROUVÉE : BRANCHES-EN UNE")
+        case .channel, .monitorOutput, .latency: ""
         }
     }
 }
@@ -56,7 +110,11 @@ enum SetupKey: Sendable {
     case down
     case left
     case right
+    /// Entrée : étape suivante, ou « Paré à émettre » au récapitulatif.
     case confirm
+    /// Espace : essai de la sortie aux étapes Enceinte et Casque, sinon comme Entrée.
+    case space
+    /// Échap : étape précédente, ou fermeture des réglages avancés.
     case cancel
 }
 
@@ -76,63 +134,58 @@ struct SetupOption: Hashable, Sendable {
     let isCurrent: Bool
 }
 
-/// Ligne du menu telle qu'affichée : « > MICRO ..... NOM · USB ~8 MS ».
-struct SetupMenuLine: Identifiable, Hashable, Sendable {
-    let row: SetupRow
+/// Ligne du récapitulatif : « 1 MICRO ..... NOM · USB ~8 MS ». Un clic ramène à son étape.
+struct SetupRecapLine: Identifiable, Hashable, Sendable {
+    let step: SetupStep
     let text: String
     let value: String
     /// Vrai quand la valeur demande une action (appareil débranché ou à choisir).
     let isAlert: Bool
 
-    var id: SetupRow { row }
+    var id: SetupStep { step }
 
     /// Libellé lu par VoiceOver : « MICRO : NOM · USB ».
     var accessibilityText: String {
-        row.label + " : " + value
+        step.tabLabel + " : " + value
     }
 }
 
-/// Contenu du menu du moniteur, calculé à partir de l'état d'`AudioManager`.
+/// Textes et choix du moniteur, calculés à partir de l'état d'`AudioManager`.
 @MainActor
-enum SetupMenu {
-    static func lines(for audio: AudioManager, focusedRow: SetupRow) -> [SetupMenuLine] {
-        SetupRow.menuRows.map { row in
-            let value = self.value(for: row, audio: audio)
-            let dots = String(repeating: ".", count: max(2, 10 - row.label.count))
-            let cursor = row == focusedRow ? "> " : "  "
-            return SetupMenuLine(
-                row: row,
-                text: cursor + row.label + " " + dots + " " + value.text,
+enum SetupContent {
+    /// Récapitulatif de l'étape 4 : micro, enceinte et casque, alignés.
+    static func recapLines(for audio: AudioManager) -> [SetupRecapLine] {
+        DeviceRole.allCases.map { role in
+            let step = SetupStep(role: role)
+            let value = self.value(for: role, audio: audio)
+            let dots = String(repeating: ".", count: max(2, 10 - step.tabLabel.count))
+            return SetupRecapLine(
+                step: step,
+                text: "\(step.rawValue) " + step.tabLabel + " " + dots + " " + value.text,
                 value: value.text,
                 isAlert: value.isAlert
             )
         }
     }
 
-    static func value(for row: SetupRow, audio: AudioManager) -> (text: String, isAlert: Bool) {
-        let selection = audio.selection
-        switch row {
-        case .microphone:
-            return deviceValue(uid: selection.inputUID, role: .microphone, audio: audio)
-        case .channel:
-            let device = audio.selectedDevice(for: .microphone)
-            return (selection.inputChannels.label(on: device).screenUppercased, false)
-        case .mainOutput:
-            return deviceValue(uid: selection.mainOutputUID, role: .mainOutput, audio: audio)
-        case .monitorOutput:
-            guard selection.monitorOutputUID != nil else { return (String(localized: "AUCUN"), false) }
-            return deviceValue(uid: selection.monitorOutputUID, role: .monitorOutput, audio: audio)
-        case .latency:
-            return (String(localized: "\(Int(selection.bufferFrameSize)) ÉCHANTILLONS"), false)
-        case .goLive:
-            return ("", false)
+    static func value(for role: DeviceRole, audio: AudioManager) -> (text: String, isAlert: Bool) {
+        let uid = audio.selection.uid(for: role)
+        // Le casque est facultatif.
+        if role == .monitorOutput, uid == nil {
+            return (String(localized: "AUCUN"), false)
         }
+        guard let uid else { return (String(localized: "À CHOISIR"), true) }
+        guard let device = audio.selectedDevice(for: role) else {
+            let name = audio.displayName(forUID: uid).screenUppercased
+            return (String(localized: "\(name) · DÉBRANCHÉ"), true)
+        }
+        return (describe(device, role: role, bufferFrameSize: audio.selection.bufferFrameSize), false)
     }
 
-    static func options(for row: SetupRow, audio: AudioManager) -> [SetupOption] {
+    static func options(for list: SetupList, audio: AudioManager) -> [SetupOption] {
         let selection = audio.selection
         let bufferFrameSize = selection.bufferFrameSize
-        switch row {
+        switch list {
         case .microphone:
             return audio.inputDevices.map { device in
                 SetupOption(
@@ -180,8 +233,6 @@ enum SetupMenu {
                     isCurrent: size == bufferFrameSize
                 )
             }
-        case .goLive:
-            return []
         }
     }
 
@@ -210,6 +261,25 @@ enum SetupMenu {
         return String(localized: "\(Int(size)) ÉCHANTILLONS (\(duration) MS)")
     }
 
+    /// Niveau du micro dessiné en caractères : « [#####...............] ».
+    nonisolated static func levelBar(level: Double, width: Int = 20) -> String {
+        let clamped = level.isFinite ? min(max(level, 0), 1) : 0
+        let filled = Int((clamped * Double(width)).rounded())
+        return "[" + String(repeating: "#", count: filled) + String(repeating: ".", count: width - filled) + "]"
+    }
+
+    /// Mot affiché après la barre de niveau.
+    nonisolated static func levelHint(level: Double, status: InputLevelStatus) -> String {
+        switch status {
+        case .running:
+            level >= 0.2 ? String(localized: "ÇA CAPTE !") : String(localized: "PARLE !")
+        case .stopped, .starting:
+            String(localized: "MISE EN ROUTE...")
+        case .denied, .unavailable, .noSignal, .muted:
+            String(localized: "RIEN !")
+        }
+    }
+
     /// Au plus `limit` lignes : au-delà, la dernière résume le nombre d'alertes restantes.
     nonisolated static func limited(_ lines: [String], to limit: Int) -> [String] {
         guard limit > 0 else { return [] }
@@ -219,26 +289,38 @@ enum SetupMenu {
         return Array(lines.prefix(limit - 1)) + [String(localized: "! ET \(hidden) AUTRES ALERTES")]
     }
 
-    /// Choix visibles quand une liste dépasse la hauteur de l'écran : une fenêtre autour du choix
-    /// en surbrillance, en gardant deux lignes pour les « ... » de défilement.
+    /// Choix visibles quand une liste dépasse la hauteur prévue : une fenêtre qui contient le choix en service.
+    /// Chaque bout masqué coûte une ligne « ... ».
     nonisolated static func visibleWindow(count: Int, highlighted: Int, capacity: Int) -> Range<Int> {
         guard count > capacity else { return 0..<count }
+        // Au début ou à la fin de la liste : une seule ligne « ... ».
+        let atEdge = max(capacity - 1, 1)
+        if highlighted < atEdge {
+            return 0..<atEdge
+        }
+        if highlighted >= count - atEdge {
+            return (count - atEdge)..<count
+        }
+        // Au milieu : « ... » en haut et en bas.
         let visible = max(capacity - 2, 1)
         let start = min(max(highlighted - visible / 2, 0), count - visible)
         return start..<(start + visible)
     }
-
-    private static func deviceValue(uid: String?, role: DeviceRole, audio: AudioManager) -> (text: String, isAlert: Bool) {
-        guard let uid else { return (String(localized: "À CHOISIR"), true) }
-        guard let device = audio.selectedDevice(for: role) else {
-            let name = audio.displayName(forUID: uid).screenUppercased
-            return (String(localized: "\(name) · DÉBRANCHÉ"), true)
-        }
-        return (describe(device, role: role, bufferFrameSize: audio.selection.bufferFrameSize), false)
-    }
 }
 
 extension SetupIssue {
+    /// Étape où le problème se règle.
+    var step: SetupStep {
+        switch self {
+        case .missingDevice(let role), .deviceDisconnected(let role), .highLatencyOutput(let role, _):
+            SetupStep(role: role)
+        case .invalidInputChannels, .bluetoothMicrophone, .builtInMicrophone:
+            .microphone
+        case .monitorSameAsMain:
+            .monitorOutput
+        }
+    }
+
     /// Message court, en capitales, pour l'écran vert du moniteur.
     var screenMessage: String {
         switch self {
@@ -308,9 +390,9 @@ enum LogbookPage {
         guard let entry else {
             return [
                 String(localized: "Première émission à bord."),
-                String(localized: "Choisis ton matériel sur"),
-                String(localized: "le moniteur, puis"),
-                String(localized: "« Paré à émettre »."),
+                String(localized: "Le moniteur te guide :"),
+                String(localized: "micro, enceinte, casque,"),
+                String(localized: "puis « Paré à émettre ! »."),
             ]
         }
         let day = entry.date.formatted(Date.FormatStyle(date: .numeric, time: .omitted, locale: .french))

@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Écran « Préparation de l'émission » : la cabine radio du chalutier, la nuit, avec le moniteur
-/// « Contrôle émetteur » et le boîtier « Commandes ». Scène de 1440 × 900 points de référence.
+/// « Contrôle émetteur », qui s'allume tout seul et pose ses questions une à une, et le boîtier « Commandes »
+/// (levier et œil magique). Scène de 1440 × 900 points de référence.
 struct SetupScreen: View {
     let flow: SetupFlow
     @FocusState private var isFocused: Bool
@@ -19,7 +20,7 @@ struct SetupScreen: View {
             TransmitterMonitor(flow: flow)
                 .placed(x: 480, y: 78)
             CommandBox(flow: flow)
-                .placed(x: 1156, y: 92)
+                .placed(x: 1156, y: 118)
             HangingLamp()
                 .placed(x: 780, y: 20)
             SetupLighting(isScreenOn: flow.isOn)
@@ -36,7 +37,10 @@ struct SetupScreen: View {
         .onAppear {
             isFocused = true
             flow.syncWithHardware()
+            flow.startAutomatically()
         }
+        // Le moniteur s'allume dès que le matériel est connu.
+        .onChange(of: flow.audio.hasLoadedDevices) { flow.startAutomatically() }
         .onChange(of: flow.audio.inputDevices) { flow.syncWithHardware() }
         .onChange(of: flow.audio.outputDevices) { flow.syncWithHardware() }
         .onChange(of: flow.audio.selection) { flow.syncWithHardware() }
@@ -129,7 +133,8 @@ extension SetupKey {
         case .downArrow: self = .down
         case .leftArrow: self = .left
         case .rightArrow: self = .right
-        case .return, .space: self = .confirm
+        case .return: self = .confirm
+        case .space: self = .space
         case .escape: self = .cancel
         default: return nil
         }

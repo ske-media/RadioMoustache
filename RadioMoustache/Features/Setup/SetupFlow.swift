@@ -17,8 +17,9 @@ struct SetupServices {
     }
 }
 
-/// Déroulé de l'écran « Préparation de l'émission » : secteur, séquence de démarrage, menu du moniteur,
-/// listes de choix, sons d'essai et validation. La vue affiche cet état et relaie clics et touches.
+/// Déroulé de l'écran « Préparation de l'émission » : le moniteur s'allume tout seul, puis pose ses questions
+/// dans l'ordre (micro, enceinte, casque) avant le récapitulatif et « Paré à émettre ». Chaque étape a son outil :
+/// niveau du micro, son d'essai de la sortie. La vue affiche cet état et relaie clics et touches.
 @MainActor
 @Observable
 final class SetupFlow {
@@ -35,15 +36,15 @@ final class SetupFlow {
         /// Du ronflement à la première ligne.
         var firstLineDelay: Duration
         var lineInterval: Duration
-        /// Pause après la dernière ligne, avant le menu.
+        /// Pause après la dernière ligne, avant la première étape.
         var readyDelay: Duration
 
-        /// Environ 3,7 secondes, comme sur la maquette.
+        /// Moins de 2 secondes : le moniteur s'allume tout seul à chaque lancement.
         static let standard = Timing(
-            humDelay: .milliseconds(250),
-            firstLineDelay: .milliseconds(910),
-            lineInterval: .milliseconds(360),
-            readyDelay: .milliseconds(400)
+            humDelay: .milliseconds(150),
+            firstLineDelay: .milliseconds(350),
+            lineInterval: .milliseconds(170),
+            readyDelay: .milliseconds(250)
         )
         static let instant = Timing(humDelay: .zero, firstLineDelay: .zero, lineInterval: .zero, readyDelay: .zero)
     }
@@ -54,6 +55,9 @@ final class SetupFlow {
         let channels: InputChannelSelection
     }
 
+    /// Nombre de lignes de messages sous la liste.
+    static let statusCapacity = 2
+
     // MARK: - État affiché
 
     private(set) var power: Power = .off
@@ -61,16 +65,20 @@ final class SetupFlow {
     private(set) var visibleBootLineCount = 0
     /// Augmente à chaque mise sous tension : relance les étincelles et l'allumage du tube.
     private(set) var powerOnCount = 0
-    private(set) var focusedRow: SetupRow = .microphone
-    /// Ligne dont la liste de choix est ouverte dans le moniteur.
-    private(set) var openRow: SetupRow?
-    private(set) var highlightedOption = 0
-    /// Sortie en cours d'essai (son voyant est allumé).
+    /// Étape affichée par le moniteur.
+    private(set) var step: SetupStep = .microphone
+    /// Étape la plus avancée déjà atteinte : les onglets suivants restent éteints.
+    private(set) var furthestStep: SetupStep = .microphone
+    /// Réglage avancé ouvert par-dessus l'étape (canal d'entrée ou latence).
+    private(set) var advancedList: SetupList?
+    /// Sortie en cours d'essai.
     private(set) var testingTarget: TestTarget?
     private(set) var testMessage: String?
     private(set) var alertMessage: String?
     /// Session validée par « Paré à émettre » : l'app passe alors dans la cabine.
     private(set) var confirmedSession: SessionConfiguration?
+    /// Matériel de la dernière émission, retrouvé au lancement (l'écran s'ouvre alors sur le récapitulatif).
+    private var restoredSelection: DeviceSelection?
 
     let audio: AudioManager
     let meter: any InputLevelMonitoring
@@ -81,6 +89,8 @@ final class SetupFlow {
     @ObservationIgnored private var bootTask: Task<Void, Never>?
     @ObservationIgnored private var testTask: Task<Void, Never>?
     @ObservationIgnored private var meterTarget: MeterTarget?
+    @ObservationIgnored private var hasStartedAutomatically = false
+    @ObservationIgnored private var hasOpenedFirstStep = false
 
     init(audio: AudioManager, services: SetupServices, timing: Timing = .standard) {
         self.audio = audio
@@ -94,25 +104,84 @@ final class SetupFlow {
 
     var isOn: Bool { power != .off }
 
-    var menuLines: [SetupMenuLine] {
-        SetupMenu.lines(for: audio, focusedRow: focusedRow)
+    /// Liste affichée : le réglage avancé ouvert, sinon les appareils de l'étape.
+    var visibleList: SetupList? {
+        advancedList ?? step.list
     }
 
-    var openOptions: [SetupOption] {
-        openRow.map { SetupMenu.options(for: $0, audio: audio) } ?? []
+    var options: [SetupOption] {
+        visibleList.map { SetupContent.options(for: $0, audio: audio) } ?? []
     }
 
-    /// Alertes de la sélection (bloquantes d'abord), puis celle de l'œil magique.
+    var question: String {
+        if let advancedList {
+            return advancedList.question
+        }
+        if step == .review, isSameAsLastTime {
+            return String(localized: "MÊME MATÉRIEL QUE LA DERNIÈRE FOIS ?")
+        }
+        return step.question
+    }
+
+    /// Vrai tant que la sélection est celle de la dernière émission, retrouvée au lancement.
+    var isSameAsLastTime: Bool {
+        restoredSelection != nil && restoredSelection == audio.selection
+    }
+
+    var recapLines: [SetupRecapLine] {
+        SetupContent.recapLines(for: audio)
+    }
+
+    /// Réglage avancé proposé à l'étape affichée : le canal si le micro a plusieurs entrées,
+    /// la latence au récapitulatif.
+    var availableAdvancedList: SetupList? {
+        switch step {
+        case .microphone:
+            return audio.inputChannelOptions.count > 1 ? .channel : nil
+        case .review:
+            return .latency
+        case .mainOutput, .monitorOutput:
+            return nil
+        }
+    }
+
+    /// Premier problème qui empêche de quitter une étape.
+    func blockingIssue(for step: SetupStep) -> SetupIssue? {
+        audio.issues.first { $0.isBlocking && $0.step == step }
+    }
+
+    /// Onglet marqué « ! » : l'étape a un problème bloquant.
+    func needsAttention(_ step: SetupStep) -> Bool {
+        blockingIssue(for: step) != nil
+    }
+
+    /// Onglet cliquable : étape déjà atteinte.
+    func isReachable(_ step: SetupStep) -> Bool {
+        step <= furthestStep
+    }
+
+    var canGoNext: Bool {
+        power == .ready && step.next != nil && blockingIssue(for: step) == nil
+    }
+
+    var canGoLive: Bool {
+        power == .ready && audio.canConfirm
+    }
+
+    /// Alertes de l'étape affichée (toutes au récapitulatif), puis celle de l'œil magique.
     var warningLines: [String] {
-        audio.issues.map(\.screenMessage) + [meterWarning].compactMap { $0 }
+        let issues = step == .review ? audio.issues : audio.issues.filter { $0.step == step }
+        let meterLines = step == .microphone || step == .review ? [meterWarning].compactMap { $0 } : []
+        return issues.map(\.screenMessage) + meterLines
     }
 
-    /// Lignes sous le menu, au plus trois : refus de validation, son d'essai, puis alertes.
+    /// Lignes sous la liste, au plus deux : refus, son d'essai, puis alertes de l'étape.
     var statusLines: [String] {
         let messages = [alertMessage, testMessage].compactMap { $0 }
-        let room = 3 - messages.count
-        guard room > 0 else { return messages }
-        return messages + SetupMenu.limited(warningLines, to: room)
+        let warnings = warningLines.filter { !messages.contains($0) }
+        let room = Self.statusCapacity - messages.count
+        guard room > 0 else { return Array(messages.prefix(Self.statusCapacity)) }
+        return messages + SetupContent.limited(warnings, to: room)
     }
 
     var meterWarning: String? {
@@ -126,11 +195,19 @@ final class SetupFlow {
         }
     }
 
-    var canGoLive: Bool {
-        power == .ready && audio.canConfirm
+    /// Mot affiché après la barre de niveau de l'étape Micro.
+    var levelHint: String {
+        SetupContent.levelHint(level: meter.level, status: meter.status)
     }
 
     // MARK: - Secteur
+
+    /// Allumage automatique, une seule fois par lancement, dès que le matériel est connu.
+    func startAutomatically() {
+        guard !hasStartedAutomatically, audio.hasLoadedDevices, power == .off else { return }
+        syncWithHardware()
+        powerOn()
+    }
 
     func togglePower() {
         if power == .off {
@@ -142,6 +219,7 @@ final class SetupFlow {
 
     func powerOn() {
         guard power == .off else { return }
+        hasStartedAutomatically = true
         bootLines = BootScript.lines(deviceCount: audio.allDevices.count)
         visibleBootLineCount = 0
         alertMessage = nil
@@ -176,14 +254,10 @@ final class SetupFlow {
         guard power != .off else { return }
         bootTask?.cancel()
         bootTask = nil
-        testTask?.cancel()
-        testTask = nil
-        testSignals.stop()
+        stopTest()
         power = .off
         visibleBootLineCount = 0
-        openRow = nil
-        testingTarget = nil
-        testMessage = nil
+        advancedList = nil
         alertMessage = nil
         sounds.play(.lever)
         syncMeter()
@@ -199,117 +273,134 @@ final class SetupFlow {
 
     private func finishBoot() {
         visibleBootLineCount = bootLines.count
+        if !hasOpenedFirstStep {
+            hasOpenedFirstStep = true
+            openFirstStep()
+        }
         power = .ready
     }
 
-    // MARK: - Menu et listes
-
-    /// Clic sur une ligne : ouvre sa liste (ou valide, pour « Paré à émettre »).
-    func activate(_ row: SetupRow) {
-        guard power == .ready else { return }
-        focusedRow = row
-        if row == .goLive {
-            goLive()
+    /// Premier écran après l'allumage : le récapitulatif si tout le matériel de la dernière émission
+    /// est là, sinon la première question. Ensuite, le moniteur rallumé reprend où il en était.
+    private func openFirstStep() {
+        if audio.lastSessionRestored, audio.canConfirm {
+            restoredSelection = audio.selection
+            step = .review
+            furthestStep = .review
         } else {
-            openList(for: row)
+            step = .microphone
+            furthestStep = .microphone
         }
     }
 
-    func openList(for row: SetupRow) {
-        guard power == .ready, row != .goLive else { return }
-        focusedRow = row
-        openRow = row
-        highlightedOption = SetupMenu.options(for: row, audio: audio).firstIndex(where: \.isCurrent) ?? 0
-        sounds.play(.menuBlip)
+    // MARK: - Étapes
+
+    /// Clic sur un onglet ou une ligne du récapitulatif : seules les étapes déjà atteintes s'ouvrent.
+    func goTo(_ target: SetupStep) {
+        guard power == .ready, isReachable(target), target != step || advancedList != nil else { return }
+        show(target)
     }
 
-    /// Survol d'un choix à la souris.
-    func highlightOption(at index: Int) {
-        guard openRow != nil, openOptions.indices.contains(index) else { return }
-        highlightedOption = index
+    /// « Suivant » : l'étape doit être réglée ; au récapitulatif, c'est « Paré à émettre ».
+    func next() {
+        guard power == .ready else { return }
+        guard advancedList == nil else {
+            closeAdvancedSettings()
+            return
+        }
+        guard let following = step.next else {
+            goLive()
+            return
+        }
+        if let issue = blockingIssue(for: step) {
+            alertMessage = issue.screenMessage
+            sounds.play(.menuBlip)
+            return
+        }
+        show(following)
     }
 
-    func closeList() {
-        guard openRow != nil else { return }
-        openRow = nil
-        sounds.play(.menuBlip)
-    }
-
-    func chooseOption(at index: Int) {
-        guard let row = openRow else { return }
-        let options = SetupMenu.options(for: row, audio: audio)
-        guard options.indices.contains(index) else { return }
-        SetupMenu.apply(options[index].choice, to: audio)
-        openRow = nil
-        focusedRow = row
-        alertMessage = nil
-        sounds.play(.menuBlip)
-        syncWithHardware()
-    }
-
-    /// Touches : ↑↓ pour la ligne ou le choix, Entrée (ou →) pour ouvrir et valider, Échap (ou ←) pour fermer.
+    /// « Retour » : étape précédente (ou fermeture des réglages avancés).
     @discardableResult
-    func handle(_ key: SetupKey) -> Bool {
-        switch power {
-        case .off:
-            guard key == .confirm else { return false }
-            powerOn()
+    func back() -> Bool {
+        guard power == .ready else { return false }
+        guard advancedList == nil else {
+            closeAdvancedSettings()
             return true
-        case .booting:
-            guard key == .confirm || key == .cancel else { return false }
-            skipBoot()
-            return true
-        case .ready:
-            return openRow == nil ? handleMenuKey(key) : handleListKey(key)
         }
-    }
-
-    private func handleMenuKey(_ key: SetupKey) -> Bool {
-        switch key {
-        case .up:
-            moveFocus(by: -1)
-            return true
-        case .down:
-            moveFocus(by: 1)
-            return true
-        case .confirm, .right:
-            activate(focusedRow)
-            return true
-        case .left, .cancel:
-            return false
-        }
-    }
-
-    private func handleListKey(_ key: SetupKey) -> Bool {
-        let lastIndex = max(openOptions.count - 1, 0)
-        switch key {
-        case .up:
-            highlightedOption = max(highlightedOption - 1, 0)
-        case .down:
-            highlightedOption = min(highlightedOption + 1, lastIndex)
-        case .confirm, .right:
-            chooseOption(at: highlightedOption)
-        case .cancel, .left:
-            closeList()
-        }
+        guard let previous = step.previous else { return false }
+        show(previous)
         return true
     }
 
-    private func moveFocus(by delta: Int) {
-        let rows = SetupRow.allCases
-        guard let index = rows.firstIndex(of: focusedRow) else { return }
-        let next = min(max(index + delta, 0), rows.count - 1)
-        guard next != index else { return }
-        focusedRow = rows[next]
-        sounds.play(.typewriterTick)
+    private func show(_ target: SetupStep) {
+        stopTest()
+        advancedList = nil
+        alertMessage = nil
+        step = target
+        furthestStep = max(furthestStep, target)
+        sounds.play(.menuBlip)
+    }
+
+    // MARK: - Choix
+
+    /// Clic sur un appareil (ou un réglage) de la liste affichée : il est pris tout de suite.
+    func choose(at index: Int) {
+        let options = self.options
+        guard power == .ready, options.indices.contains(index) else { return }
+        apply(options[index], sound: .menuBlip)
+    }
+
+    /// Flèches ↑↓ : l'appareil voisin est pris tout de suite (le niveau et l'œil magique le suivent).
+    func moveSelection(by delta: Int) {
+        let options = self.options
+        guard power == .ready, !options.isEmpty else { return }
+        let current = options.firstIndex(where: \.isCurrent)
+        let target = current.map { min(max($0 + delta, 0), options.count - 1) } ?? 0
+        guard target != current else { return }
+        apply(options[target], sound: .typewriterTick)
+    }
+
+    private func apply(_ option: SetupOption, sound: InterfaceSound) {
+        if !option.isCurrent {
+            // Le son d'essai visait l'appareil d'avant.
+            stopTest()
+            SetupContent.apply(option.choice, to: audio)
+        }
+        alertMessage = nil
+        sounds.play(sound)
+        syncWithHardware()
+    }
+
+    // MARK: - Réglages avancés
+
+    /// « Réglages avancés » : le canal d'entrée (étape Micro) ou la latence (récapitulatif).
+    func openAdvancedSettings() {
+        guard power == .ready, advancedList == nil, let list = availableAdvancedList else { return }
+        stopTest()
+        alertMessage = nil
+        advancedList = list
+        sounds.play(.menuBlip)
+    }
+
+    func closeAdvancedSettings() {
+        guard advancedList != nil else { return }
+        advancedList = nil
+        sounds.play(.menuBlip)
     }
 
     // MARK: - Sons d'essai
 
+    /// Bouton « Essai » (ou Espace) des étapes Enceinte et Casque.
+    func testCurrentOutput() {
+        guard advancedList == nil, let target = step.testTarget else { return }
+        test(target)
+    }
+
     func test(_ target: TestTarget) {
         guard power == .ready else { return }
         guard let device = audio.selectedDevice(for: target.role) else {
-            testingTarget = nil
+            stopTest()
             if target == .monitorOutput, audio.selection.monitorOutputUID == nil {
                 testMessage = String(localized: "» AUCUN CASQUE CHOISI")
             } else {
@@ -335,6 +426,17 @@ final class SetupFlow {
         }
     }
 
+    /// Coupe le son d'essai en cours et efface son message.
+    private func stopTest() {
+        testTask?.cancel()
+        testTask = nil
+        if testingTarget != nil {
+            testSignals.stop()
+            testingTarget = nil
+        }
+        testMessage = nil
+    }
+
     // MARK: - Validation
 
     /// « Paré à émettre » : mémorise la session et passe dans la cabine.
@@ -342,12 +444,10 @@ final class SetupFlow {
         guard power == .ready else { return }
         do {
             let session = try audio.confirmSession()
-            openRow = nil
+            advancedList = nil
             alertMessage = nil
-            testTask?.cancel()
-            testTask = nil
+            stopTest()
             testSignals.stop()
-            testingTarget = nil
             sounds.play(.goLive)
             confirmedSession = session
             syncMeter()
@@ -357,12 +457,68 @@ final class SetupFlow {
         }
     }
 
-    /// Retour de la cabine : le secteur reste allumé, le menu réapparaît.
+    /// Retour de la cabine : le secteur reste allumé, le moniteur rouvre le récapitulatif.
     func backToSetup() {
         guard confirmedSession != nil else { return }
         confirmedSession = nil
-        focusedRow = .goLive
+        step = .review
+        furthestStep = .review
         syncWithHardware()
+    }
+
+    // MARK: - Clavier
+
+    /// Touches : ↑↓ pour l'appareil, Entrée (ou →) pour avancer, Échap (ou ←) pour revenir,
+    /// Espace pour l'essai de la sortie.
+    @discardableResult
+    func handle(_ key: SetupKey) -> Bool {
+        switch power {
+        case .off:
+            guard key == .confirm || key == .space else { return false }
+            powerOn()
+            return true
+        case .booting:
+            guard key == .confirm || key == .space || key == .cancel else { return false }
+            skipBoot()
+            return true
+        case .ready:
+            return advancedList == nil ? handleStepKey(key) : handleAdvancedKey(key)
+        }
+    }
+
+    private func handleStepKey(_ key: SetupKey) -> Bool {
+        switch key {
+        case .up, .down:
+            guard step.list != nil else { return false }
+            moveSelection(by: key == .up ? -1 : 1)
+        case .confirm:
+            next()
+        case .right:
+            // La flèche ne fait pas partir à l'antenne : seule Entrée valide le récapitulatif.
+            guard step.next != nil else { return false }
+            next()
+        case .space:
+            if step.testTarget != nil {
+                testCurrentOutput()
+            } else {
+                next()
+            }
+        case .cancel, .left:
+            return back()
+        }
+        return true
+    }
+
+    private func handleAdvancedKey(_ key: SetupKey) -> Bool {
+        switch key {
+        case .up:
+            moveSelection(by: -1)
+        case .down:
+            moveSelection(by: 1)
+        case .confirm, .space, .cancel, .left, .right:
+            closeAdvancedSettings()
+        }
+        return true
     }
 
     // MARK: - Matériel

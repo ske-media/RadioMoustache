@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Tube cathodique du moniteur : éteint, séquence de démarrage, puis menu vert et listes de choix.
+/// Tube cathodique du moniteur : éteint, séquence de démarrage, puis les étapes guidées de la préparation.
 struct MonitorScreen: View {
     let flow: SetupFlow
 
@@ -89,14 +89,8 @@ struct MonitorScreen: View {
             BootText(lines: Array(flow.bootLines.prefix(flow.visibleBootLineCount)))
         case .ready:
             Ambient { time in
-                Group {
-                    if let row = flow.openRow {
-                        OptionList(flow: flow, row: row)
-                    } else {
-                        MainMenu(flow: flow)
-                    }
-                }
-                .opacity(Self.flickerOpacity(at: time))
+                StepScreen(flow: flow)
+                    .opacity(Self.flickerOpacity(at: time))
             }
         }
     }
@@ -189,69 +183,214 @@ private struct BootText: View {
     }
 }
 
-/// Menu principal : micro, canal, enceinte, casque, latence, alertes et « Paré à émettre ».
-private struct MainMenu: View {
+/// Étape guidée : onglets, question, réponses, outil de l'étape, messages et navigation.
+private struct StepScreen: View {
     let flow: SetupFlow
+
+    static let contentWidth = MonitorScreen.size.width - 44
+    /// Lignes de choix visibles sous la question.
+    static let listCapacity = 6
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenLine(text: "  " + String(localized: "PRÉPARATION DE L'ÉMISSION · 102,4 MHZ"))
-                ScreenLine(text: "  =====================================")
-                ForEach(flow.menuLines) { line in
-                    Button {
-                        flow.activate(line.row)
-                    } label: {
-                        ScreenLine(text: line.text, isInverted: line.row == flow.focusedRow)
+                StepTabs(flow: flow)
+                Text(verbatim: flow.question)
+                    .font(PirateFont.screen(27))
+                    .foregroundStyle(Palette.neonGreen)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 4)
+                    .frame(height: 32, alignment: .leading)
+                    .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
+                Group {
+                    if flow.step == .review, flow.advancedList == nil {
+                        RecapPanel(flow: flow)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ChoiceList(flow: flow)
+                                .frame(height: CGFloat(Self.listCapacity) * 25, alignment: .topLeading)
+                            ToolRow(flow: flow)
+                                .frame(height: 25, alignment: .leading)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text(verbatim: line.accessibilityText))
                 }
-                Color.clear.frame(height: 8)
-                ForEach(Array(flow.statusLines.enumerated()), id: \.offset) { _, status in
-                    ScreenLine(text: "  " + status)
+                .frame(height: CGFloat(Self.listCapacity) * 25 + 29, alignment: .topLeading)
+                .padding(.top, 4)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(flow.statusLines.enumerated()), id: \.offset) { _, status in
+                        ScreenLine(text: status)
+                    }
                 }
+                .padding(.top, 4)
             }
-            .padding(.top, 20)
-            .padding(.horizontal, 22)
+            .frame(width: Self.contentWidth, alignment: .leading)
+            .placed(x: 22, y: 18)
 
-            ScreenLine(text: String(localized: "CLIQUE UNE LIGNE POUR CHANGER · FLÈCHES ET ENTRÉE"), isDimmed: true)
-                .frame(width: MonitorScreen.size.width - 48)
-                .placed(x: 22, y: MonitorScreen.size.height - 75)
-
-            HStack(spacing: 0) {
-                Text(verbatim: flow.focusedRow == .goLive ? "> " : "  ")
-                    .font(PirateFont.screen(21))
-                    .foregroundStyle(Palette.neonGreen)
-                GoLiveButton(flow: flow)
-                Spacer(minLength: 8)
-                (flow.audio.lastSessionRestored ? Text("SESSION RETROUVÉE") : Text("NOUVELLE SESSION"))
-                    .font(PirateFont.screen(21))
-                    .foregroundStyle(Palette.neonGreen)
-                BlinkingCursor()
-            }
-            .frame(width: MonitorScreen.size.width - 48, height: 25)
-            .placed(x: 22, y: MonitorScreen.size.height - 41)
+            StepFooter(flow: flow)
+                .frame(width: Self.contentWidth, height: 25)
+                .placed(x: 22, y: MonitorScreen.size.height - 41)
         }
         .phosphorGlow()
         .frame(width: MonitorScreen.size.width, height: MonitorScreen.size.height, alignment: .topLeading)
     }
 }
 
-/// Bouton « [ PARÉ À ÉMETTRE ] » : plein quand tout est prêt, en creux sinon.
+/// Onglets « 1 MICRO  2 ENCEINTE  3 CASQUE  4 GO » : l'étape affichée est en vidéo inverse,
+/// celles qui ne sont pas encore atteintes restent éteintes, un « ! » signale une étape à régler.
+private struct StepTabs: View {
+    let flow: SetupFlow
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(SetupStep.allCases) { step in
+                let isCurrent = step == flow.step
+                let isReachable = flow.isReachable(step)
+                let mark = flow.needsAttention(step) ? " !" : ""
+                Button {
+                    flow.goTo(step)
+                } label: {
+                    Text(verbatim: "\(step.rawValue) " + step.tabLabel + mark)
+                        .font(PirateFont.screen(21))
+                        .foregroundStyle(isCurrent ? Palette.phosphorInk : Palette.neonGreen)
+                        .padding(.horizontal, 6)
+                        .frame(height: 25)
+                        .background(isCurrent ? Palette.neonGreen : .clear)
+                        .overlay {
+                            Rectangle().stroke(Palette.neonGreen.opacity(isCurrent ? 0 : 0.45), lineWidth: 1)
+                        }
+                        .opacity(isReachable ? 1 : 0.35)
+                }
+                .buttonStyle(.plain)
+                .disabled(!isReachable)
+                .accessibilityLabel(Text("Étape \(step.rawValue) sur 4 : \(step.tabLabel)"))
+                .accessibilityAddTraits(isCurrent ? .isSelected : [])
+            }
+        }
+    }
+}
+
+/// Appareils (ou réglages) proposés comme des boutons radio : un clic ou les flèches les prennent tout de suite.
+private struct ChoiceList: View {
+    let flow: SetupFlow
+
+    var body: some View {
+        let options = flow.options
+        let current = options.firstIndex(where: \.isCurrent) ?? 0
+        let window = SetupContent.visibleWindow(count: options.count, highlighted: current, capacity: StepScreen.listCapacity)
+        VStack(alignment: .leading, spacing: 0) {
+            if options.isEmpty, let list = flow.visibleList {
+                ScreenLine(text: "  " + list.emptyText, isDimmed: true)
+            }
+            if window.lowerBound > 0 {
+                ScreenLine(text: "      ...", isDimmed: true)
+            }
+            ForEach(window, id: \.self) { index in
+                let option = options[index]
+                Button {
+                    flow.choose(at: index)
+                } label: {
+                    ScreenLine(text: (option.isCurrent ? "> (*) " : "  ( ) ") + option.text, isInverted: option.isCurrent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: option.text))
+                .accessibilityAddTraits(option.isCurrent ? .isSelected : [])
+            }
+            if window.upperBound < options.count {
+                ScreenLine(text: "      ...", isDimmed: true)
+            }
+        }
+    }
+}
+
+/// Outil de l'étape, sous la liste : niveau du micro, ou essai de la sortie.
+private struct ToolRow: View {
+    let flow: SetupFlow
+
+    var body: some View {
+        if let list = flow.visibleList {
+            switch list {
+            case .microphone, .channel:
+                LevelRow(flow: flow)
+            case .mainOutput:
+                OutputTestButton(flow: flow, target: .mainOutput)
+            case .monitorOutput:
+                if flow.audio.selection.monitorOutputUID != nil {
+                    OutputTestButton(flow: flow, target: .monitorOutput)
+                }
+            case .latency:
+                ScreenLine(text: String(localized: "PETIT = PEU DE RETARD, MAIS PLUS FRAGILE"), isDimmed: true)
+            }
+        }
+    }
+}
+
+/// Niveau du micro en caractères : on parle, la barre se remplit.
+private struct LevelRow: View {
+    let flow: SetupFlow
+
+    var body: some View {
+        let meter = flow.meter
+        let level = meter.status == .running ? meter.level : 0
+        ScreenLine(text: String(localized: "NIVEAU") + " " + SetupContent.levelBar(level: level) + "  " + flow.levelHint)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Niveau du micro"))
+            .accessibilityValue(Text("\(Int((level * 100).rounded())) %"))
+    }
+}
+
+/// Essai de la sortie de l'étape : la voix du Mac dit « un, deux » dessus, puis un bip.
+private struct OutputTestButton: View {
+    let flow: SetupFlow
+    let target: TestTarget
+
+    var body: some View {
+        let isTesting = flow.testingTarget == target
+        ScreenButton(isTesting ? "[ ESSAI EN COURS... ]" : "[ ESSAI : « UN, DEUX » ]", isProminent: isTesting) {
+            flow.test(target)
+        }
+        .accessibilityHint(Text("Fait parler la sortie choisie (touche Espace)"))
+    }
+}
+
+/// Récapitulatif : une ligne par étape (un clic y ramène), puis le gros bouton « Paré à émettre ! ».
+private struct RecapPanel: View {
+    let flow: SetupFlow
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(flow.recapLines) { line in
+                Button {
+                    flow.goTo(line.step)
+                } label: {
+                    ScreenLine(text: line.text)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: line.accessibilityText))
+                .accessibilityHint(Text("Revient à cette étape"))
+            }
+            GoLiveButton(flow: flow)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
+        }
+    }
+}
+
+/// Gros bouton « [ PARÉ À ÉMETTRE ! ] » : plein quand tout est prêt, en creux sinon.
 private struct GoLiveButton: View {
     let flow: SetupFlow
 
     var body: some View {
         let isReady = flow.canGoLive
         Button {
-            flow.activate(.goLive)
+            flow.goLive()
         } label: {
-            Text("[ PARÉ À ÉMETTRE ]")
-                .font(PirateFont.screen(21))
+            Text("[ PARÉ À ÉMETTRE ! ]")
+                .font(PirateFont.screen(30))
                 .foregroundStyle(isReady ? Palette.phosphorInk : Palette.neonGreen)
-                .padding(.horizontal, 10)
-                .frame(height: 25)
+                .padding(.horizontal, 14)
+                .frame(height: 42)
                 .background(isReady ? Palette.neonGreen : .clear)
                 .overlay {
                     Rectangle().stroke(Palette.neonGreen.opacity(isReady ? 0 : 0.7), lineWidth: 1)
@@ -263,74 +402,69 @@ private struct GoLiveButton: View {
     }
 }
 
-/// Liste des choix d'une ligne, affichée dans l'écran à la place du menu.
-private struct OptionList: View {
+/// Navigation : « < Retour » à gauche, « Réglages avancés » au milieu, « Suivant > » (ou « OK ») à droite.
+private struct StepFooter: View {
     let flow: SetupFlow
-    let row: SetupRow
-
-    /// Nombre de lignes de choix qui tiennent sous le titre.
-    private static let capacity = 9
 
     var body: some View {
-        let options = flow.openOptions
-        let window = SetupMenu.visibleWindow(
-            count: options.count,
-            highlighted: flow.highlightedOption,
-            capacity: Self.capacity
-        )
-        ZStack(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 0) {
-                ScreenLine(text: "  " + row.listTitle)
-                ScreenLine(text: "  " + String(repeating: "=", count: row.listTitle.count))
-                if window.lowerBound > 0 {
-                    ScreenLine(text: "    ...", isDimmed: true)
-                }
-                ForEach(window, id: \.self) { index in
-                    let option = options[index]
-                    let isHighlighted = index == flow.highlightedOption
-                    Button {
-                        flow.chooseOption(at: index)
-                    } label: {
-                        ScreenLine(
-                            text: (isHighlighted ? "> " : "  ") + (option.isCurrent ? "• " : "  ") + option.text,
-                            isInverted: isHighlighted
-                        )
+        ZStack {
+            if flow.advancedList == nil {
+                if flow.step.previous != nil {
+                    ScreenButton("[ < RETOUR ]") {
+                        _ = flow.back()
                     }
-                    .buttonStyle(.plain)
-                    .onHover { isHovering in
-                        if isHovering { flow.highlightOption(at: index) }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if flow.availableAdvancedList != nil {
+                    ScreenButton("[ RÉGLAGES AVANCÉS ]") {
+                        flow.openAdvancedSettings()
                     }
-                    .accessibilityLabel(Text(verbatim: option.text))
-                    .accessibilityAddTraits(option.isCurrent ? .isSelected : [])
                 }
-                if window.upperBound < options.count {
-                    ScreenLine(text: "    ...", isDimmed: true)
+                if flow.step.next != nil {
+                    // Toujours cliquable : si l'étape n'est pas réglée, le moniteur dit pourquoi.
+                    ScreenButton("[ SUIVANT > ]", isProminent: flow.canGoNext, isEnabled: flow.canGoNext) {
+                        flow.next()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
+            } else {
+                ScreenButton("[ OK ]", isProminent: true) {
+                    flow.closeAdvancedSettings()
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.top, 20)
-            .padding(.horizontal, 22)
-
-            ScreenLine(text: String(localized: "FLÈCHES : CHOISIR · ENTRÉE : VALIDER · ÉCHAP : RETOUR"), isDimmed: true)
-                .frame(width: MonitorScreen.size.width - 48)
-                .placed(x: 22, y: MonitorScreen.size.height - 75)
-
-            Button {
-                flow.closeList()
-            } label: {
-                Text("[ RETOUR ]")
-                    .font(PirateFont.screen(21))
-                    .foregroundStyle(Palette.neonGreen)
-                    .padding(.horizontal, 10)
-                    .frame(height: 25)
-                    .overlay {
-                        Rectangle().stroke(Palette.neonGreen.opacity(0.7), lineWidth: 1)
-                    }
-            }
-            .buttonStyle(.plain)
-            .placed(x: 44, y: MonitorScreen.size.height - 41)
         }
-        .phosphorGlow()
-        .frame(width: MonitorScreen.size.width, height: MonitorScreen.size.height, alignment: .topLeading)
+    }
+}
+
+/// Bouton en texte vert du moniteur : plein quand c'est l'action principale, en creux sinon.
+private struct ScreenButton: View {
+    let title: LocalizedStringKey
+    let isProminent: Bool
+    let isEnabled: Bool
+    let action: () -> Void
+
+    init(_ title: LocalizedStringKey, isProminent: Bool = false, isEnabled: Bool = true, action: @escaping () -> Void) {
+        self.title = title
+        self.isProminent = isProminent
+        self.isEnabled = isEnabled
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(PirateFont.screen(21))
+                .foregroundStyle(isProminent ? Palette.phosphorInk : Palette.neonGreen)
+                .padding(.horizontal, 10)
+                .frame(height: 25)
+                .background(isProminent ? Palette.neonGreen : .clear)
+                .overlay {
+                    Rectangle().stroke(Palette.neonGreen.opacity(isProminent ? 0 : 0.7), lineWidth: 1)
+                }
+                .opacity(isEnabled ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
     }
 }
 

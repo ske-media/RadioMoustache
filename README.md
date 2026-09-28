@@ -50,7 +50,8 @@ RadioMoustacheTests/  Tests unitaires (Swift Testing), matériel simulé
 ## Avancement
 
 - [x] **Étape 1** : architecture, `AudioManager` (Core Audio), liste et sélection des périphériques, mémorisation, CI
-- [ ] **Étape 2** : écran « Préparation de l'émission » (levier secteur, moniteur cathodique, œil magique, sons d'essai)
+- [x] **Étape 2** : écran « Préparation de l'émission » (moniteur cathodique qui s'allume tout seul, préparation
+  guidée micro → enceinte → casque → go, œil magique, sons d'essai)
 - [ ] **Étape 3** : moteur temps réel (agrégé privé + AVAudioEngine), monitoring, distorsion
 - [ ] **Étape 4** : musique, le conducteur (Spotify + fichiers, enchaînements, ducking)
 - [ ] **Étape 5** : soundboard (cartouches), import, enregistrement, persistance
