@@ -151,7 +151,7 @@ struct LogbookPageTests {
 }
 
 struct SetupIssueScreenMessageTests {
-    private static let all: [SetupIssue] = [
+    static let all: [SetupIssue] = [
         .missingDevice(.microphone), .missingDevice(.mainOutput), .missingDevice(.monitorOutput),
         .deviceDisconnected(.microphone), .deviceDisconnected(.mainOutput), .deviceDisconnected(.monitorOutput),
         .monitorSameAsMain, .invalidInputChannels,
@@ -159,7 +159,7 @@ struct SetupIssueScreenMessageTests {
         .highLatencyOutput(.mainOutput, .airPlay), .bluetoothMicrophone, .builtInMicrophone,
     ]
 
-    @Test(arguments: all)
+    @Test(arguments: SetupIssueScreenMessageTests.all)
     func messagesAreShortCapitalsWithTheirSeverity(issue: SetupIssue) {
         let message = issue.screenMessage
 

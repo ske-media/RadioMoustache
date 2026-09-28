@@ -39,6 +39,7 @@ enum WAVEncoder {
 
 private extension Data {
     mutating func appendLittleEndian<T: FixedWidthInteger>(_ value: T) {
-        withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
+        // `Swift.` : dans une extension de Data, `withUnsafeBytes` désignerait la méthode de Data.
+        Swift.withUnsafeBytes(of: value.littleEndian) { append(contentsOf: $0) }
     }
 }
