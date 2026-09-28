@@ -79,24 +79,48 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 - **ON AIR hybride** : clic bref = antenne verrouillée ; appui long = push-to-talk (coupure au relâchement).
 - Raccourcis **dans l'app** (fenêtre au premier plan) : Espace = ON AIR ; bloc de touches 4×4 = cartouches,
   par **position physique** (fonctionne en AZERTY comme en QWERTY).
-- Potards : **Micro**, **Master**, **Casque**, **Musique (Spotify)**.
+- Potards : **Micro**, **Master**, **Casque**, **Musique** (le conducteur : Spotify et fichiers).
 - Rack d'effets **cumulables, ordre fixe** : Pitch → Supermarché → Distorsion ; chaque effet = interrupteur on/off +
   un potard d'intensité.
 - **Annonce Supermarché** : passe-bande + saturation + réverbération de grand hall + **carillon d'annonce automatique**
   (mélodie originale synthétisée, pas de jingle protégé) + grésillement de sono.
 - **Grosse Voix / Pitch** : potard de -12 à +12 demi-tons + presets Monstre / Grosse voix / Chipmunk.
 
-## 7. Spotify
+## 7. Musique : le conducteur (Spotify + fichiers)
 
-- Contrôle **AppleScript** de l'app Spotify du Mac : Play/Pause, Suivant, Précédent, shuffle/repeat, titre, artiste,
-  pochette ; **lancement automatique** de Spotify. (Le SDK Spotify App Remote n'existe pas sur macOS.)
-- Audio : **capture de Spotify par Process Tap** (macOS 14.2+) : le son passe par le moteur (enceinte + casque) et le
-  son d'origine est coupé pendant la capture. Autorisation « Enregistrement audio système » demandée une fois.
-- **Ducking** : -12 dB, descente 300 ms, remontée 1,5 s. Déclencheurs : **ON AIR** + interrupteur manuel
-  **« musique en retrait »**.
-- Mini-player = **platine vinyle broadcast** : la pochette devient l'étiquette du disque qui tourne, le bras avance
-  avec la progression, **temps restant en chiffres Nixie**, **filtre « vieux disque »** optionnel (craquements +
-  filtre d'époque, audible à l'antenne).
+Décidé le 28/09/2026 : la liste de lecture est **l'essentiel de l'émission**.
+
+- **Conducteur** = la liste de lecture de l'émission, affichée au **centre du bureau** de la cabine (grand écran vert
+  « CONDUCTEUR » à côté de la platine, §9).
+- **Deux sources dans la même liste** : des **titres Spotify** (tes playlists, la recherche) et des **fichiers audio du
+  Mac** (mp3, m4a, wav, aiff, caf, flac ; glisser-déposer ou bouton « + Fichier »).
+- **Plusieurs conducteurs nommés** (« Apéro du jeudi », « Mariage Julie & Tom »…), enregistrés ; on choisit celui à
+  charger. Une playlist Spotify peut servir de point de départ à un conducteur.
+- **Enchaînement automatique** : le titre suivant part tout seul, comme à la radio, avec un **fondu court**
+  (≈ 2 s). Entre deux titres Spotify, c'est le fondu réglé dans Spotify qui s'applique : l'app place le titre suivant
+  dans la file d'attente de Spotify et le laisse enchaîner.
+- Outils :
+  - **réordonner** par glisser-déposer, et **« À suivre »** : le titre choisi passe juste après celui en cours ;
+  - **heures de passage** de chaque titre à l'heure de Paris, et **fin prévue** du conducteur ;
+  - **« Stop après »** : la musique s'arrête à la fin du titre en cours, pour prendre l'antenne ;
+  - **« Chercher »** : recherche dans Spotify (et parmi les fichiers déjà ajoutés), ajout au conducteur en un clic ;
+  - **« En retrait »** : musique baissée à la main (voir ducking).
+- **Platine vinyle** = le titre en cours : la pochette devient l'étiquette du disque qui tourne, le bras avance avec la
+  progression, **temps restant en chiffres Nixie** ; précédent / lecture-pause / suivant pilotent le conducteur.
+  **Filtre « vieux disque »** optionnel (craquements + filtre d'époque, audible à l'antenne).
+- **Spotify** (compte **Premium**, confirmé le 28/09/2026) :
+  - **API Web Spotify** (connexion à ton compte par OAuth avec PKCE, sans secret) pour lire tes playlists, chercher des
+    titres, récupérer titres, artistes, durées et pochettes, et remplir la file d'attente. Il faut créer une fois une
+    **app développeur Spotify** (gratuite) et donner son identifiant client à Radio Moustache ;
+  - lecture pilotée dans l'**app Spotify du Mac**, lancée automatiquement (AppleScript pour lire un titre précis,
+    mettre en pause, connaître la position ; la lecture automatique de Spotify en fin de liste est désactivée) ;
+  - limite de Spotify pour les nouvelles apps (depuis fin 2024) : les playlists créées par Spotify (éditoriales,
+    « Découvertes de la semaine »…) ne sont pas lisibles ; tes propres playlists (ou tes copies) le sont ;
+  - audio : **capture de Spotify par Process Tap** (macOS 14.2+) : le son passe par le moteur (enceinte + casque) et le
+    son d'origine est coupé pendant la capture. Autorisation « Enregistrement audio système » demandée une fois.
+- **Fichiers** : lus par le moteur de l'app, sur l'enceinte et le casque, avec les fondus.
+- **Ducking** : -12 dB, descente 300 ms, remontée 1,5 s. Déclencheurs : **ON AIR** + touche **« En retrait »** du
+  conducteur.
 
 ## 8. Soundboard (cartouches)
 
@@ -141,10 +165,13 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
   - **rack de l'émetteur** : 4 **lampes** qui rougeoient (plus fort à l'antenne), 2 **VU-mètres**, **cadran d'accord**
     88–108 MHz (Paris, Londres, Bruxelles, Monte-Carlo, aiguille sur 102,4), **œil magique** du micro, **chrono
     d'antenne en chiffres Nixie** ;
-  - sur le bureau : **platine vinyle** = Spotify (temps restant en Nixie, petit écran vert titre / artiste), **console en
-    émail vert d'eau martelé** (potards Micro / Master / Casque / Musique, leviers d'effets Pitch / Supermarché / Disto
-    avec potard d'intensité, levier « musique en retrait »), **rack de cartouches** kaki (banques A / B / C, 16
-    cartouches à étiquette Dymo, voyants READY / PLAY, **STOP · TOUT COUPER**) ;
+  - sur le bureau, de gauche à droite : **platine vinyle** (titre en cours, temps restant en Nixie, petit écran vert),
+    **conducteur** au centre (boîtier kaki, grand écran vert : heures de passage, titre en cours en vidéo inverse,
+    « stop après » ; touches ivoire « À suivre », « Stop après », « Chercher », « + Fichier », « En retrait » ;
+    étiquette Dymo du conducteur chargé, §7), **console en émail vert d'eau martelé** (potards Micro / Master /
+    Casque / Musique en 2 × 2, leviers d'effets Pitch / Supermarché / Disto avec potard d'intensité), **rack de
+    cartouches** kaki (banques A / B / C, 16 cartouches à étiquette Dymo, voyants READY / PLAY,
+    **STOP · TOUT COUPER**) ;
   - à l'antenne : **la cabine vire au rouge**, la vitre ON AIR et l'ampoule s'allument et scintillent.
 - **Horloge de bord** (demandée le 28/09/2026) :
   - **heure de Paris** : fuseau `Europe/Paris`, heure d'été comprise ; le cadran affiche « PARIS » et le décalage
@@ -185,13 +212,18 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
    démarrage du moniteur cathodique, menu vert (micro, canal, enceinte, casque, latence), œil magique sur le niveau
    réel du micro, sons d'essai sur l'enceinte et sur le casque, puis « Paré à émettre ».
 3. **Moteur temps réel** : agrégé privé + AVAudioEngine, monitoring, première distorsion.
-4. **Spotify** : AppleScript + Process Tap, ducking.
+4. **Musique : le conducteur** (§7) : conducteurs nommés, titres Spotify (API Web + app Spotify du Mac) et fichiers,
+   enchaînement automatique et fondus, à suivre, heures de passage, stop après, recherche, capture de Spotify
+   (Process Tap), ducking. Étape la plus longue : elle pourra être livrée en deux temps (fichiers, puis Spotify).
 5. **Soundboard** : cartouches, import, enregistrement, persistance.
 
 ## 11. Écarts assumés par rapport au cahier des charges initial
 
 - `AVAudioSession` (iOS uniquement) → **Core Audio HAL**.
-- SDK Spotify App Remote (iOS / Android uniquement) → **AppleScript** + **Process Tap** pour l'audio.
+- SDK Spotify App Remote (iOS / Android uniquement) → **API Web Spotify** (playlists, recherche, file d'attente) +
+  **AppleScript** (lecture dans l'app Spotify du Mac) + **Process Tap** pour l'audio.
+- Mini-player Spotify seul → **conducteur** mêlant Spotify et fichiers (demande du 28/09/2026 : la musique est
+  l'essentiel).
 - Interface « minimaliste » → **radio pirate des années 60, « full full vintage »** (demande explicite), en gardant
   le haut contraste et les couleurs d'origine (orange, vert néon, bordeaux) comme lueurs.
 - Core Data → **JSON + FileManager** pour la bibliothèque de jingles.
