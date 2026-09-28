@@ -1,7 +1,7 @@
 # Radio Moustache
 
 Application macOS native de diffusion et d'animation audio en direct : micro à l'antenne avec effets,
-Spotify avec ducking automatique, soundboard de jingles. Direction artistique : studio radio des années 50-60.
+Spotify avec ducking automatique, soundboard de jingles. Direction artistique : radio pirate des années 60 (« émetteur clandestin, 1967 »).
 
 La spécification complète et toutes les décisions sont dans [`docs/SPEC.md`](docs/SPEC.md).
 
@@ -50,7 +50,7 @@ RadioMoustacheTests/  Tests unitaires (Swift Testing), matériel simulé
 ## Avancement
 
 - [x] **Étape 1** : architecture, `AudioManager` (Core Audio), liste et sélection des périphériques, mémorisation, CI
-- [ ] **Étape 2** : modale de démarrage vintage (plaque gravée, œil magique, son test)
+- [ ] **Étape 2** : écran « Préparation de l'émission » (levier secteur, moniteur cathodique, œil magique, sons d'essai)
 - [ ] **Étape 3** : moteur temps réel (agrégé privé + AVAudioEngine), monitoring, distorsion
 - [ ] **Étape 4** : Spotify (AppleScript + capture audio) et ducking
 - [ ] **Étape 5** : soundboard (cartouches), import, enregistrement, persistance

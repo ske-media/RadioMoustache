@@ -1,6 +1,6 @@
 # Radio Moustache — Spécification
 
-Décisions validées le 27/09/2026 à l'issue du questionnaire (QCM).
+Décisions validées le 27/09/2026 à l'issue du questionnaire (QCM), direction artistique revue le 28/09/2026.
 Ce document est la source de vérité du projet. Toute nouvelle décision y est consignée.
 
 ---
@@ -8,8 +8,8 @@ Ce document est la source de vérité du projet. Toute nouvelle décision y est 
 ## 1. Vision
 
 Application macOS **native** (SwiftUI, pas de webapp ni d'Electron) de diffusion et d'animation audio en direct,
-pensée pour les **soirées et événements en salle**. Direction artistique : **studio radio des années 1950-60,
-« full full vintage »**.
+pensée pour les **soirées et événements en salle**. Direction artistique : **radio pirate des années 60,
+« Radio Moustache, émetteur clandestin, 1967 »**, en « full full vintage » (voir §9).
 
 ## 2. Plateforme et projet
 
@@ -32,9 +32,9 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 - Sorties possibles : enceinte Bluetooth, enceinte / sono filaire, casque filaire, casque Bluetooth / AirPods.
 - Conséquences : l'app accepte tout type de périphérique mais **prévient** des cas à risque (voir §4).
 
-## 4. Écran de démarrage (Session Setup)
+## 4. Écran de démarrage : « Préparation de l'émission » (Session Setup)
 
-- Modale affichée **à chaque lancement**, **pré-remplie** avec la dernière session si ses périphériques sont
+- Écran affiché **à chaque lancement**, **pré-remplie** avec la dernière session si ses périphériques sont
   branchés (sinon : périphériques par défaut du Mac) → validation en un clic.
 - Champs : **Micro** (+ **canal d'entrée** : entrée 1, 2… ou paire stéréo), **Sortie principale**,
   **Casque de retour** (facultatif, forcément différent de la sortie principale), **Latence** (buffer 64 / 128 / 256 / 512).
@@ -43,7 +43,9 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
   - sortie Bluetooth : 150 à 300 ms de décalage ; AirPlay : ~2 s ;
   - micro Bluetooth : macOS bascule le périphérique en qualité « téléphone » (16 kHz), entrée et sortie ;
   - micro intégré : capte toute la pièce, risque de Larsen.
-- Style : **plaque de métal gravée**, menus déroulants fiables habillés vintage, voyants.
+- Style (détail au §9) : les réglages s'affichent en vert sur le **moniteur cathodique « Contrôle émetteur »** ; à
+  côté, le boîtier « Commandes » porte le **levier « SECTEUR »**, l'œil magique et les boutons « Essai enceinte » /
+  « Essai casque ». On valide avec **[ PARÉ À ÉMETTRE ]**.
 - Mémorisation : `UserDefaults` (UID des périphériques, jamais les `AudioDeviceID` qui changent à chaque reconnexion).
 - Déconnexion pendant la session : **bandeau d'alerte bordeaux + reconnexion automatique** dès que le périphérique
   réapparaît (silence entre-temps).
@@ -102,54 +104,72 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 - Stockage : copie dans `~/Library/Application Support/RadioMoustache/` + index `library.json`
   (JSON + FileManager, plus simple et lisible que Core Data).
 
-## 9. Direction artistique — « full full vintage »
+## 9. Direction artistique : « Radio Moustache, émetteur clandestin, 1967 »
 
-Précisée le 27/09/2026 à partir de trois photos de référence fournies par l'utilisateur (studio radio des années 60
-au pupitre bleu-vert ; studio des années 70 tamisé à la lampe ; ordinateur des années 80 à écran vert).
+Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/WB7sB9tKfAJHHjLmNmnMz1
+(elle remplace un premier essai « studio des années 60 », jugé pas assez marqué).
 
-- Mélange retenu : le **matériel radio des années 60** (pupitre émaillé, gros boutons, platine, magnéto, boîtier
-  ON AIR, murs en panneaux perforés) dans la **pénombre chaude des années 70** (lampe à abat-jour, grain de
-  pellicule), avec des **petits écrans cathodiques verts** pour les textes (titre en cours, menus).
-- **Studio de nuit** : pénombre, lumière de lampe chaude, lueurs orange et vertes. Dark mode conservé.
-- **Appareils vus de face** posés sur un bureau en bois, mur perforé en haut avec l'horloge et le boîtier ON AIR :
-  tout reste cliquable et lisible en direct.
-- **Pupitre en émail bleu-vert martelé** (vert d'eau patiné), qui contraste avec les lueurs orange.
-- Rendu : **images photoréalistes générées par IA** (Higgsfield, fonds transparents) pour les façades, boutons,
-  VU-mètres, bobines et platine, **animées en code** (aiguilles, bobines, voyants), comme les plugins audio vintage.
-  En attendant (Higgsfield limité le 27/09), la maquette utilise des matières en CSS et SVG.
-- Validation du style sur une **maquette interactive** avant de coder :
-  https://claude.ai/artifact/WB7sB9tKfAJHHjLmNmnMz1
-- Référence de départ : **studio radio 1950-60**, **skeuomorphisme total** (bakélite, bois, métal, verre, vis
-  apparentes, reflets, aiguilles avec inertie physique).
-- Palette = **lueurs d'époque**, dark mode exclusif :
-  - fond : bakélite / bois sombre ;
-  - **orange électrique `#ff6b00`** : lueur des tubes, chiffres Nixie ;
-  - **vert néon `#3efb0a`** : œil magique, voyants ;
-  - **bordeaux profond `#6a0e15`** : enseigne ON AIR, alertes, cuir.
-- Typographie : **lettres gravées** sur les façades (Jost, proche de Futura), **étiquettes Dymo** pour les jingles,
-  **texte pixel vert phosphore** sur les écrans (VT323), logo en script années 60 (Yellowtail). Polices libres (OFL),
-  à embarquer dans l'app.
-- Composants :
-  - ON AIR = **enseigne lumineuse** (bouton géant, halo, léger scintillement) ;
-  - niveaux = **VU-mètres à aiguille** (master, balistique VU 300 ms) + **œil magique** (micro) ;
-  - volumes = **potards en bakélite** ; effets = **interrupteurs à levier + voyants** ;
-  - soundboard = **cartouches broadcast** (étiquette Dymo, voyants READY / PLAY) ;
-  - Spotify = **platine vinyle broadcast**.
-- Éléments de studio : **horloge à aiguilles**, **chrono d'antenne Nixie**, **icône ON AIR dans la barre des menus**,
-  **reflet rouge** sur tout le studio quand on est à l'antenne.
-- Ambiance : **allumage des lampes** au lancement, **patine / grain / vignettage**, **scintillement** des lueurs,
-  **bruitages d'interface** (jamais envoyés à l'enceinte).
-- Disposition : **console d'époque** — pont de mesure en haut (VU-mètres, enseigne ON AIR, horloge, œil magique),
-  puis platine | console | rack de cartouches.
-- Lisibilité : les informations critiques (ON AIR, niveaux, alertes) restent très contrastées en salle sombre.
+- **Concept** : une **radio pirate des années 60**, comme les radios qui émettaient alors depuis des bateaux ancrés
+  en eaux internationales. Le studio est caché dans la **cabine radio d'un vieux chalutier**, **la nuit**. Tout est
+  bricolé : scotch de masquage écrit au marqueur, gaffer, étiquettes Dymo, pochoirs.
+- **Décor commun aux deux écrans** :
+  - **cloison en acier rivetée** peinte en vert d'eau, écaillée et rouillée, tuyau au plafond ;
+  - **drapeau pirate** : tête de mort à **moustache en guidon orange**, deux micros croisés à la place des tibias ;
+  - nom au **pochoir** « Radio Moustache », fréquence **102,4 MHz** ;
+  - **bureau en bois** sombre, **lampe suspendue qui se balance** (la lumière bouge avec elle), grain de pellicule,
+    vignettage.
+- **Écran 1, « Préparation de l'émission »** (l'écran de démarrage du §4) :
+  - sur le bureau : **journal de bord** tapé à la machine (dernière session + un mot au marqueur), tasse émaillée qui
+    fume, cendrier et cigarette ;
+  - **moniteur « Contrôle émetteur »** (boîtier kaki, écran cathodique vert) avec le scotch « PAS TOUCHE ! — le
+    capitaine » ;
+  - **boîtier « Commandes »** : **interrupteur à couteau « SECTEUR »** (étincelles), **œil magique** (niveau du micro),
+    boutons **« Essai enceinte »** et **« Essai casque »** ;
+  - abaisser le levier lance la **séquence de démarrage** du moniteur (« chauffage des lampes… antenne hissée…
+    position : eaux internationales… 102,4 MHz… matériel audio trouvé »), puis le **menu vert** : micro, canal,
+    enceinte, casque, latence, avertissements, **[ PARÉ À ÉMETTRE ]**.
+- **Écran 2, « Cabine radio »** (le studio) :
+  - au mur : **horloge de bord** en laiton, **boîtier ON AIR** en tôle froissée (vitre rouge au pochoir, **ampoule rouge
+    grillagée**), **hublot** en laiton (mer au clair de lune, phare qui balaie l'horizon) ;
+  - **rack de l'émetteur** : 4 **lampes** qui rougeoient (plus fort à l'antenne), 2 **VU-mètres**, **cadran d'accord**
+    88–108 MHz (Paris, Londres, Bruxelles, Monte-Carlo, aiguille sur 102,4), **œil magique** du micro, **chrono
+    d'antenne en chiffres Nixie** ;
+  - sur le bureau : **platine vinyle** = Spotify (temps restant en Nixie, petit écran vert titre / artiste), **console en
+    émail vert d'eau martelé** (potards Micro / Master / Casque / Musique, leviers d'effets Pitch / Supermarché / Disto
+    avec potard d'intensité, levier « musique en retrait »), **rack de cartouches** kaki (banques A / B / C, 16
+    cartouches à étiquette Dymo, voyants READY / PLAY, **STOP · TOUT COUPER**) ;
+  - à l'antenne : **la cabine vire au rouge**, la vitre ON AIR et l'ampoule s'allument et scintillent.
+- **Horloge de bord** (demandée le 28/09/2026) :
+  - **heure de Paris** : fuseau `Europe/Paris`, heure d'été comprise ; le cadran affiche « PARIS » et le décalage
+    « GMT+1 » ou « GMT+2 » selon la saison ;
+  - **trotteuse rouge qui avance à chaque seconde** (petit rebond), calée sur les secondes réelles ; le chrono d'antenne
+    et les compteurs avancent au même rythme ;
+  - cadran d'horloge de cabine radio de navire : chiffres 1 à 12, 13 à 24 en rouge, **secteurs de silence** rouges
+    (h+15 à h+18, h+45 à h+48) et verts (h+00 à h+03, h+30 à h+33).
+- **Palette = lueurs d'époque**, dark mode exclusif, sur de l'acier vert d'eau, du bois sombre et de la tôle kaki ou
+  noire :
+  - **orange électrique `#ff6b00`** : lampes de l'émetteur, chiffres Nixie, moustache du drapeau, voyants PLAY ;
+  - **vert phosphore `#3efb0a`** : écrans cathodiques, œil magique, voyants READY ;
+  - **rouge / bordeaux `#6a0e15`** : ON AIR, alertes, bouton STOP.
+- **Typographie** (polices libres, embarquées dans l'app) : **Black Ops One** (pochoirs), **Permanent Marker**
+  (scotch écrit au marqueur), **Special Elite** (machine à écrire), **VT323** (écrans verts), **Jost** (gravures,
+  étiquettes Dymo, chiffres Nixie). Licences OFL et Apache 2.0.
+- **Rendu** : le décor et les matières sont des **images** (d'abord les dessins de la maquette, plus tard des images
+  photoréalistes générées par IA avec Higgsfield, bloqué les 27 et 28/09 par sa limite quotidienne) ; **tout ce qui
+  bouge est animé en code** (levier, aiguilles, lampes, fumée, lumière, trotteuse).
+- **Composants** : ON AIR hybride (§6), **VU-mètres à aiguille** (balistique VU 300 ms), **œil magique**, **potards**,
+  **leviers + voyants**, **cartouches**, **platine** ; **icône ON AIR dans la barre des menus** ; **bruitages
+  d'interface** jamais envoyés à l'enceinte.
+- **Lisibilité** : les informations critiques (ON AIR, niveaux, alertes, heure) restent très contrastées en salle
+  sombre.
 
 ## 10. Plan d'implémentation
 
 1. **Architecture + AudioManager** : couche Core Audio, liste et sélection des périphériques, mémorisation,
    écran de diagnostic provisoire, CI. ✅
-2. **Modale de démarrage vintage** liée à `AudioManager` : un **moniteur cathodique qui s'allume** (balayage,
-   séquence de démarrage) et affiche en vert le choix du micro, du canal, de l'enceinte, du casque et de la latence ;
-   à côté, un levier « secteur », l'œil magique (niveau micro réel) et les boutons « son test ».
+2. **Écran « Préparation de l'émission »** lié à `AudioManager` (§4 et §9) : levier « SECTEUR », séquence de
+   démarrage du moniteur cathodique, menu vert (micro, canal, enceinte, casque, latence), œil magique sur le niveau
+   réel du micro, sons d'essai sur l'enceinte et sur le casque, puis « Paré à émettre ».
 3. **Moteur temps réel** : agrégé privé + AVAudioEngine, monitoring, première distorsion.
 4. **Spotify** : AppleScript + Process Tap, ducking.
 5. **Soundboard** : cartouches, import, enregistrement, persistance.
@@ -158,5 +178,6 @@ au pupitre bleu-vert ; studio des années 70 tamisé à la lampe ; ordinateur de
 
 - `AVAudioSession` (iOS uniquement) → **Core Audio HAL**.
 - SDK Spotify App Remote (iOS / Android uniquement) → **AppleScript** + **Process Tap** pour l'audio.
-- Interface « minimaliste » → **« full full vintage »** (demande explicite), en gardant le haut contraste.
+- Interface « minimaliste » → **radio pirate des années 60, « full full vintage »** (demande explicite), en gardant
+  le haut contraste et les couleurs d'origine (orange, vert néon, bordeaux) comme lueurs.
 - Core Data → **JSON + FileManager** pour la bibliothèque de jingles.
