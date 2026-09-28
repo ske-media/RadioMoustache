@@ -30,7 +30,7 @@ struct AudioDevice: Identifiable, Hashable, Sendable {
     var hasInput: Bool { inputChannelCount > 0 }
     var hasOutput: Bool { outputChannelCount > 0 }
 
-    /// Vrai si le périphérique peut être proposé dans la modale de démarrage.
+    /// Vrai si le périphérique peut être proposé dans l'écran de préparation.
     var isSelectable: Bool {
         isAlive && !isHidden && !uid.hasPrefix(Self.privateUIDPrefix)
     }

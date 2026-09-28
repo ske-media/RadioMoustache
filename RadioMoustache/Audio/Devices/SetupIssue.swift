@@ -54,7 +54,7 @@ enum SetupIssue: Hashable, Identifiable, Sendable {
     }
 }
 
-/// Règles de validation de la modale de démarrage (logique pure, testée unitairement).
+/// Règles de validation de l'écran de préparation (logique pure, testée unitairement).
 enum SetupValidator {
     static func issues(for selection: DeviceSelection, inputs: [AudioDevice], outputs: [AudioDevice]) -> [SetupIssue] {
         var issues: [SetupIssue] = []

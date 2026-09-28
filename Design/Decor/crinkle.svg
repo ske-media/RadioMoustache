@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <filter id="crinkle" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency="0.16" numOctaves="2" seed="13" stitchTiles="stitch" result="n"/>
+    <feDiffuseLighting in="n" surfaceScale="1.7" diffuseConstant="1" lighting-color="#6a6a66" result="lit">
+      <feDistantLight azimuth="235" elevation="55"/>
+    </feDiffuseLighting>
+    <feColorMatrix in="lit" type="matrix" values="0.34 0 0 0 0.015  0 0.34 0 0 0.015  0 0 0.32 0 0.012  0 0 0 0 1"/>
+  </filter>
+  <rect width="300" height="300" filter="url(#crinkle)"/>
+</svg>

@@ -32,6 +32,22 @@ struct SessionConfigStoreTests {
         #expect(store.loadLastSelection() == selection)
     }
 
+    @Test func remembersTheLogbookPage() throws {
+        let (store, defaults, suite) = try makeStore()
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        #expect(store.loadLogbookEntry() == nil)
+        let entry = LogbookEntry(
+            date: Date(timeIntervalSince1970: 1_790_000_000),
+            microphone: "Nor-Tec Streaming Mic",
+            mainOutput: "Maisounette",
+            monitorOutput: "AirPods Pro"
+        )
+        store.saveLogbookEntry(entry)
+
+        #expect(store.loadLogbookEntry() == entry)
+    }
+
     @Test func ignoresUnreadableData() throws {
         let (store, defaults, suite) = try makeStore()
         defer { defaults.removePersistentDomain(forName: suite) }

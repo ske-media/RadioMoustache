@@ -35,7 +35,7 @@ enum InputChannelSelection: Codable, Hashable, Sendable {
     }
 }
 
-/// Choix de périphériques : en cours d'édition dans la modale, ou mémorisé de la dernière session.
+/// Choix de périphériques : en cours d'édition dans l'écran de préparation, ou mémorisé de la dernière session.
 /// Seuls les UID sont stockés : ils restent stables d'un branchement à l'autre.
 struct DeviceSelection: Codable, Hashable, Sendable {
     var inputUID: String?

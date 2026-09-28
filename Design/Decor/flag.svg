@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420">
+  <defs>
+    <clipPath id="cloth">
+      <path d="M 18 22 Q 160 12 300 24 T 586 18 L 576 64 L 590 92 L 572 138 L 588 176 L 570 222 L 586 262 L 568 302 L 584 346 L 574 398 Q 440 406 300 396 T 22 402 Q 12 300 20 210 T 18 22 Z"/>
+    </clipPath>
+    <filter id="weave" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9 0.08" numOctaves="2" seed="8" result="w"/>
+      <feColorMatrix in="w" type="matrix" values="0 0 0 0 0.85  0 0 0 0 0.85  0 0 0 0 0.85  0 0 0 0.22 -0.06"/>
+    </filter>
+    <filter id="folds" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.018" numOctaves="2" seed="2" result="f"/>
+      <feDiffuseLighting in="f" surfaceScale="22" lighting-color="#ffffff" result="lit">
+        <feDistantLight azimuth="110" elevation="38"/>
+      </feDiffuseLighting>
+      <feColorMatrix in="lit" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.34 0 0 0 -0.19"/>
+    </filter>
+    <filter id="worn" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -12 7.4" result="mask"/>
+      <feComposite in="SourceGraphic" in2="mask" operator="in"/>
+    </filter>
+    <radialGradient id="bone" cx="50%" cy="38%" r="65%">
+      <stop offset="0" stop-color="#f4eddb"/>
+      <stop offset="1" stop-color="#d6cbae"/>
+    </radialGradient>
+    <linearGradient id="stache" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9a3c"/>
+      <stop offset="1" stop-color="#e2600a"/>
+    </linearGradient>
+    <radialGradient id="grommet" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#e8e2d0"/>
+      <stop offset=".5" stop-color="#8f8a7c"/>
+      <stop offset="1" stop-color="#3a3731"/>
+    </radialGradient>
+    <g id="mic">
+      <rect x="287" y="176" width="26" height="186" rx="9"/>
+      <rect x="281" y="170" width="38" height="16" rx="4"/>
+      <rect x="270" y="88" width="60" height="88" rx="27"/>
+      <path d="M 276 108 H 324 M 276 120 H 324 M 276 132 H 324 M 276 144 H 324 M 276 156 H 324" fill="none" stroke="#0e0e0e" stroke-width="3"/>
+    </g>
+    <g id="stacheHalf">
+      <path d="M 300 229 Q 331 205 374 219 Q 356 247 300 247 Z" fill="url(#stache)" stroke="#4a1d00" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M 369 220 C 397 222 413 204 405 186 C 399 172 379 174 383 190" fill="none" stroke="#4a1d00" stroke-width="16" stroke-linecap="round"/>
+      <path d="M 369 220 C 397 222 413 204 405 186 C 399 172 379 174 383 190" fill="none" stroke="#ff8a2a" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 312 234 Q 335 223 358 225 M 314 240 Q 337 233 360 232" fill="none" stroke="#b84a00" stroke-width="2"/>
+    </g>
+  </defs>
+
+  <g clip-path="url(#cloth)">
+    <rect width="600" height="420" fill="#121110"/>
+    <rect width="600" height="420" filter="url(#weave)"/>
+    <rect width="600" height="420" filter="url(#folds)"/>
+    <g filter="url(#worn)">
+      <g fill="url(#bone)" stroke="#0e0e0e" stroke-width="3">
+        <use href="#mic" transform="rotate(-38 300 225)"/>
+        <use href="#mic" transform="rotate(38 300 225)"/>
+      </g>
+      <path d="M 300 70 C 358 70 396 108 396 162 C 396 196 382 218 366 230 L 366 262 C 366 272 358 278 348 278 L 252 278 C 242 278 234 272 234 262 L 234 230 C 218 218 204 196 204 162 C 204 108 242 70 300 70 Z" fill="url(#bone)" stroke="#0e0e0e" stroke-width="3"/>
+      <ellipse cx="262" cy="170" rx="28" ry="26" fill="#0e0e0e"/>
+      <ellipse cx="338" cy="170" rx="28" ry="26" fill="#0e0e0e"/>
+      <circle cx="266" cy="172" r="6" fill="#ff6b00"/>
+      <circle cx="334" cy="172" r="6" fill="#ff6b00"/>
+      <path d="M 300 196 L 287 221 Q 300 227 313 221 Z" fill="#0e0e0e"/>
+      <path d="M 244 256 Q 300 266 356 256" fill="none" stroke="#0e0e0e" stroke-width="3"/>
+      <path d="M 262 250 V 276 M 281 252 V 278 M 300 253 V 278 M 319 252 V 278 M 338 250 V 276" fill="none" stroke="#0e0e0e" stroke-width="3"/>
+      <path d="M 331 86 L 322 103 L 331 114 L 324 128" fill="none" stroke="#0e0e0e" stroke-width="2.5"/>
+      <use href="#stacheHalf"/>
+      <use href="#stacheHalf" transform="translate(600 0) scale(-1 1)"/>
+    </g>
+  </g>
+
+  <circle cx="42" cy="36" r="11" fill="url(#grommet)" stroke="#2a2824" stroke-width="2"/>
+  <circle cx="42" cy="36" r="4" fill="#1a1917"/>
+  <circle cx="560" cy="32" r="11" fill="url(#grommet)" stroke="#2a2824" stroke-width="2"/>
+  <circle cx="560" cy="32" r="4" fill="#1a1917"/>
+</svg>

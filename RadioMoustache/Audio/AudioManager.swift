@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// Façade audio de l'app : liste les périphériques, gère la sélection de la modale de démarrage
-/// et la mémorise d'une session à l'autre.
+/// Façade audio de l'app : liste les périphériques, gère la sélection de l'écran de préparation
+/// et la mémorise d'une session à l'autre (avec la page du journal de bord).
 ///
 /// Sur macOS, les périphériques se listent et se choisissent via le HAL Core Audio
 /// (`AVAudioSession` n'existe pas et `AVAudioEngine` ne sait pas les énumérer).
@@ -22,6 +22,10 @@ final class AudioManager {
     private(set) var issues: [SetupIssue] = []
     private(set) var hasLoadedDevices = false
     private(set) var lastErrorMessage: String?
+    /// Vrai si le micro et la sortie principale de la dernière session ont été retrouvés au lancement.
+    private(set) var lastSessionRestored = false
+    /// Dernière émission validée, pour le journal de bord.
+    private(set) var logbook: LogbookEntry?
 
     // MARK: - Dépendances
 
@@ -29,6 +33,7 @@ final class AudioManager {
     private let store: any SessionConfigStore
     /// Délai de regroupement des événements matériels (un branchement Bluetooth en déclenche plusieurs).
     private let refreshDelay: Duration
+    private let now: () -> Date
 
     @ObservationIgnored private var eventsTask: Task<Void, Never>?
     @ObservationIgnored private var pendingRefresh: Task<Void, Never>?
@@ -38,11 +43,14 @@ final class AudioManager {
     init(
         hardware: any AudioHardwareProviding = CoreAudioHardware(),
         store: any SessionConfigStore = UserDefaultsSessionConfigStore(),
-        refreshDelay: Duration = .milliseconds(150)
+        refreshDelay: Duration = .milliseconds(150),
+        now: @escaping () -> Date = Date.init
     ) {
         self.hardware = hardware
         self.store = store
         self.refreshDelay = refreshDelay
+        self.now = now
+        logbook = store.loadLogbookEntry()
     }
 
     // MARK: - Cycle de vie
@@ -121,12 +129,21 @@ final class AudioManager {
         else {
             throw SetupError.incompleteConfiguration(issues.filter(\.isBlocking))
         }
+        let monitorOutput = selectedDevice(for: .monitorOutput)
         store.saveLastSelection(selection)
+        let entry = LogbookEntry(
+            date: now(),
+            microphone: input.name,
+            mainOutput: mainOutput.name,
+            monitorOutput: monitorOutput?.name
+        )
+        store.saveLogbookEntry(entry)
+        logbook = entry
         return SessionConfiguration(
             input: input,
             inputChannels: selection.inputChannels,
             mainOutput: mainOutput,
-            monitorOutput: selectedDevice(for: .monitorOutput),
+            monitorOutput: monitorOutput,
             bufferFrameSize: selection.bufferFrameSize
         )
     }
@@ -205,13 +222,18 @@ final class AudioManager {
         if hasLoadedDevices {
             selection = DeviceSelectionResolver.sanitized(selection, inputs: inputDevices, outputs: outputDevices)
         } else {
+            let saved = store.loadLastSelection()
             selection = DeviceSelectionResolver.initialSelection(
-                saved: store.loadLastSelection(),
+                saved: saved,
                 inputs: inputDevices,
                 outputs: outputDevices,
                 defaultInputUID: snapshot.defaultInputUID,
                 defaultOutputUID: snapshot.defaultOutputUID
             )
+            if let saved, saved.inputUID != nil {
+                lastSessionRestored = saved.inputUID == selection.inputUID
+                    && saved.mainOutputUID == selection.mainOutputUID
+            }
             hasLoadedDevices = true
         }
         revalidate()

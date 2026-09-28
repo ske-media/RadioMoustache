@@ -34,11 +34,18 @@ pensée pour les **soirées et événements en salle**. Direction artistique : *
 
 ## 4. Écran de démarrage : « Préparation de l'émission » (Session Setup)
 
-- Écran affiché **à chaque lancement**, **pré-remplie** avec la dernière session si ses périphériques sont
+- Écran affiché **à chaque lancement**, **pré-rempli** avec la dernière session si ses périphériques sont
   branchés (sinon : périphériques par défaut du Mac) → validation en un clic.
+- **Allumage à chaque lancement** (choix du 28/09/2026) : on abaisse le levier « SECTEUR » (clic, Espace ou Entrée),
+  étincelles, puis **séquence de démarrage d'environ 3 s** qu'un clic ou Entrée fait passer ; le menu apparaît ensuite.
+- **Choix d'un appareil** : un clic sur une ligne du moniteur ouvre **la liste des appareils en vert, dans l'écran** ;
+  au clavier : ↑↓ pour la ligne ou l'appareil, Entrée pour ouvrir la liste et valider, Échap pour la fermer.
 - Champs : **Micro** (+ **canal d'entrée** : entrée 1, 2… ou paire stéréo), **Sortie principale**,
   **Casque de retour** (facultatif, forcément différent de la sortie principale), **Latence** (buffer 64 / 128 / 256 / 512).
-- Outils : **œil magique** (niveau du micro en direct), bouton **« son test »** par sortie.
+- Outils : **œil magique** (niveau réel du micro et du canal choisis, dès que le secteur est allumé), bouton
+  **« son test »** par sortie : **la voix du Mac annonce « Essai enceinte, un, deux »** (ou « casque ») **puis un bip**
+  de 1 kHz, pour savoir tout de suite quelle sortie parle.
+- **Journal de bord** : la dernière émission validée (date et appareils) est mémorisée et affichée sur le bureau.
 - Avertissements (non bloquants) :
   - sortie Bluetooth : 150 à 300 ms de décalage ; AirPlay : ~2 s ;
   - micro Bluetooth : macOS bascule le périphérique en qualité « téléphone » (16 kHz), entrée et sortie ;
@@ -145,7 +152,8 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
   - **trotteuse rouge qui avance à chaque seconde** (petit rebond), calée sur les secondes réelles ; le chrono d'antenne
     et les compteurs avancent au même rythme ;
   - cadran d'horloge de cabine radio de navire : chiffres 1 à 12, 13 à 24 en rouge, **secteurs de silence** rouges
-    (h+15 à h+18, h+45 à h+48) et verts (h+00 à h+03, h+30 à h+33).
+    (h+15 à h+18, h+45 à h+48) et verts (h+00 à h+03, h+30 à h+33) ;
+  - **affichage Nixie HH:MM:SS** sous l'horloge (demandé le 28/09/2026).
 - **Palette = lueurs d'époque**, dark mode exclusif, sur de l'acier vert d'eau, du bois sombre et de la tôle kaki ou
   noire :
   - **orange électrique `#ff6b00`** : lampes de l'émetteur, chiffres Nixie, moustache du drapeau, voyants PLAY ;
@@ -154,12 +162,18 @@ Validée le 28/09/2026 sur la maquette interactive : https://claude.ai/artifact/
 - **Typographie** (polices libres, embarquées dans l'app) : **Black Ops One** (pochoirs), **Permanent Marker**
   (scotch écrit au marqueur), **Special Elite** (machine à écrire), **VT323** (écrans verts), **Jost** (gravures,
   étiquettes Dymo, chiffres Nixie). Licences OFL et Apache 2.0.
-- **Rendu** : le décor et les matières sont des **images** (d'abord les dessins de la maquette, plus tard des images
-  photoréalistes générées par IA avec Higgsfield, bloqué les 27 et 28/09 par sa limite quotidienne) ; **tout ce qui
+- **Rendu** : les matières (cloison, bois, tôle froissée, papier, grain) et le drapeau sont des **images exportées de la
+  maquette** (sources SVG et script d'export dans le dépôt), le reste est dessiné en SwiftUI ; plus tard, des images
+  photoréalistes générées par IA avec Higgsfield (bloqué les 27 et 28/09 par sa limite quotidienne). **Tout ce qui
   bouge est animé en code** (levier, aiguilles, lampes, fumée, lumière, trotteuse).
+- **Fenêtre** : redimensionnable aux **proportions 16:10** (scène de référence 1440 × 900 points, mise à l'échelle),
+  plein écran possible avec des bandes sombres, barre de titre masquée. Le diagnostic audio de l'étape 1 reste
+  accessible dans une fenêtre à part (menu Fenêtre, ⌥⌘D).
 - **Composants** : ON AIR hybride (§6), **VU-mètres à aiguille** (balistique VU 300 ms), **œil magique**, **potards**,
-  **leviers + voyants**, **cartouches**, **platine** ; **icône ON AIR dans la barre des menus** ; **bruitages
-  d'interface** jamais envoyés à l'enceinte.
+  **leviers + voyants**, **cartouches**, **platine** ; **icône ON AIR dans la barre des menus**.
+- **Bruitages d'interface** (clac du levier, étincelles, allumage du moniteur, frappe du texte, validation) :
+  **fabriqués par l'app** (synthèse), joués sur les **haut-parleurs intégrés du Mac**, ou dans le casque de retour s'il
+  n'y en a pas ; **jamais sur l'enceinte ni à l'antenne**.
 - **Lisibilité** : les informations critiques (ON AIR, niveaux, alertes, heure) restent très contrastées en salle
   sombre.
 

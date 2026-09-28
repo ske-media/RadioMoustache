@@ -1,4 +1,5 @@
 import CoreAudio
+import Foundation
 import Testing
 @testable import RadioMoustache
 
@@ -126,6 +127,60 @@ struct AudioManagerTests {
         manager.refreshDevices()
 
         #expect(manager.allDevices == [Fixtures.usbMic])
+    }
+
+    @Test func confirmingWritesTheLogbookPage() throws {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        let hardware = MockAudioHardware(
+            devices: Fixtures.all,
+            defaultInputUID: Fixtures.usbMic.uid,
+            defaultOutputUID: Fixtures.builtInSpeakers.uid
+        )
+        let store = InMemorySessionConfigStore()
+        let manager = AudioManager(hardware: hardware, store: store, refreshDelay: .zero, now: { date })
+        manager.refreshDevices()
+        manager.selectMonitorOutput(uid: Fixtures.wiredHeadphones.uid)
+
+        try manager.confirmSession()
+
+        let expected = LogbookEntry(
+            date: date,
+            microphone: Fixtures.usbMic.name,
+            mainOutput: Fixtures.builtInSpeakers.name,
+            monitorOutput: Fixtures.wiredHeadphones.name
+        )
+        #expect(store.logbook == expected)
+        #expect(manager.logbook == expected)
+    }
+
+    @Test func theLogbookOfTheLastBroadcastIsReadAtLaunch() {
+        let entry = LogbookEntry(date: .now, microphone: "Shure MV7", mainOutput: "JBL Flip", monitorOutput: nil)
+        let store = InMemorySessionConfigStore(logbook: entry)
+
+        let manager = AudioManager(hardware: MockAudioHardware(devices: Fixtures.all), store: store, refreshDelay: .zero)
+
+        #expect(manager.logbook == entry)
+    }
+
+    @Test func restoredSessionIsReported() {
+        var saved = DeviceSelection()
+        saved.inputUID = Fixtures.interface.uid
+        saved.mainOutputUID = Fixtures.bluetoothSpeaker.uid
+        let (manager, _, _) = makeManager(saved: saved)
+        manager.refreshDevices()
+
+        #expect(manager.lastSessionRestored)
+    }
+
+    @Test func sessionWithAMissingMicrophoneIsNotRestored() {
+        var saved = DeviceSelection()
+        saved.inputUID = "micro-disparu"
+        saved.mainOutputUID = Fixtures.bluetoothSpeaker.uid
+        let (manager, _, _) = makeManager(saved: saved)
+        manager.refreshDevices()
+
+        #expect(!manager.lastSessionRestored)
+        #expect(manager.selection.inputUID == Fixtures.usbMic.uid)
     }
 
     @Test func hardwareErrorsAreReported() {

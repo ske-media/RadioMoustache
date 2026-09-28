@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Écran de diagnostic provisoire (étape 1) : vérifie la détection des périphériques,
-/// la sélection et la mémorisation. Remplacé à l'étape 2 par la plaque de sélecteurs vintage.
+/// Écran technique (fenêtre « Diagnostic audio », ⌥⌘D) : vérifie la détection des périphériques,
+/// la sélection et la mémorisation, sans le décor de la cabine.
 struct DeviceDiagnosticsView: View {
     @Environment(AudioManager.self) private var audio
     @State private var confirmation: String?
@@ -68,9 +68,9 @@ struct DeviceDiagnosticsView: View {
                 .font(.system(size: 30, weight: .black, design: .serif))
                 .tracking(8)
                 .foregroundStyle(Palette.electricOrange)
-            Text("Diagnostic audio · étape 1")
+            Text("Diagnostic audio")
                 .font(.title3.weight(.semibold))
-            Text("Écran technique provisoire, remplacé à l'étape 2 par la plaque de sélecteurs vintage. Branche ou débranche un périphérique : la liste se met à jour toute seule.")
+            Text("Écran technique : les réglages sont les mêmes que sur le moniteur de la cabine. Branche ou débranche un périphérique : la liste se met à jour toute seule.")
                 .font(.callout)
                 .foregroundStyle(Palette.ivory.opacity(0.65))
         }
