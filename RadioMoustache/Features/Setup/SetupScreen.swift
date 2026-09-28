@@ -93,7 +93,7 @@ private struct SetupLighting: View {
         ZStack(alignment: .topLeading) {
             Ambient { time in
                 GlowSpot(
-                    center: CGPoint(x: 800 + LampSwing.lightOffset(at: time), y: 260),
+                    center: CGPoint(x: 800 + LampSwing.lightOffset(at: time), y: 230),
                     radii: CGSize(width: 520, height: 440),
                     color: Color(red: 1, green: 176 / 255, blue: 86 / 255, opacity: 0.34)
                 )

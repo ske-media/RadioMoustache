@@ -76,11 +76,15 @@ struct MonitorScreen: View {
     private var content: some View {
         switch flow.power {
         case .off:
-            Circle()
-                .fill(Color(red: 160 / 255, green: 1, blue: 140 / 255, opacity: 0.2))
-                .frame(width: 8, height: 8)
-                .shadow(color: Palette.neonGreen.opacity(0.3), radius: 5)
-                .frame(width: Self.size.width, height: Self.size.height)
+            ZStack {
+                Circle()
+                    .fill(Color(red: 160 / 255, green: 1, blue: 140 / 255, opacity: 0.2))
+                    .frame(width: 8, height: 8)
+                    .shadow(color: Palette.neonGreen.opacity(0.3), radius: 5)
+                StandbyHint()
+                    .offset(y: 86)
+            }
+            .frame(width: Self.size.width, height: Self.size.height)
         case .booting:
             BootText(lines: Array(flow.bootLines.prefix(flow.visibleBootLineCount)))
         case .ready:
@@ -106,6 +110,24 @@ struct MonitorScreen: View {
         case 0.77..<0.78: return 0.9
         default: return 1
         }
+    }
+}
+
+/// Consigne affichée tant que le secteur est coupé : elle pulse doucement.
+private struct StandbyHint: View {
+    var body: some View {
+        Ambient { time in
+            VStack(spacing: 4) {
+                Text("SECTEUR COUPÉ")
+                Text("ABAISSE LE LEVIER À DROITE  -->")
+                Text("(OU APPUIE SUR ENTRÉE)")
+            }
+            .font(PirateFont.screen(21))
+            .foregroundStyle(Palette.neonGreen)
+            .opacity(0.3 + 0.15 * sin(2 * .pi * time / 2.4))
+            .phosphorGlow()
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -306,16 +306,16 @@ struct HangingLamp: View {
         ZStack(alignment: .topLeading) {
             Rectangle()
                 .fill(Color(hex: 0x0C0C0B))
-                .frame(width: 2, height: 96)
+                .frame(width: 2, height: 40)
                 .placed(x: 19, y: 0)
             RoundedRectangle(cornerRadius: 3)
                 .fill(LinearGradient(colors: [Color(hex: 0x4A4A46), Color(hex: 0x1C1C1B)], startPoint: .top, endPoint: .bottom))
                 .frame(width: 16, height: 14)
-                .placed(x: 12, y: 92)
+                .placed(x: 12, y: 36)
             PolygonShape.lampShade
                 .fill(LinearGradient(colors: [Color(hex: 0x33503F), Color(hex: 0x1A2A21)], startPoint: .top, endPoint: .bottom))
                 .frame(width: 128, height: 50)
-                .placed(x: -44, y: 104)
+                .placed(x: -44, y: 48)
             Ellipse()
                 .fill(EllipticalGradient(
                     stops: [
@@ -329,9 +329,9 @@ struct HangingLamp: View {
                     endRadiusFraction: 0.8
                 ))
                 .frame(width: 120, height: 12)
-                .placed(x: -40, y: 148)
+                .placed(x: -40, y: 92)
         }
-        .frame(width: 40, height: 200, alignment: .topLeading)
+        .frame(width: 40, height: 110, alignment: .topLeading)
     }
 }
 

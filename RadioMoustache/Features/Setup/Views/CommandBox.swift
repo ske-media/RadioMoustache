@@ -32,7 +32,7 @@ struct CommandBox: View {
             .placed(x: 63, y: 56)
 
             MaskingTape(width: 144, height: 30, angle: -2) {
-                (flow.isOn ? Text("Secteur : ON") : Text("Clique : secteur"))
+                (flow.isOn ? Text("Secteur : ON") : Text("Allume-moi !"))
                     .markerStyle(15)
             }
             .placed(x: 56, y: 236)
